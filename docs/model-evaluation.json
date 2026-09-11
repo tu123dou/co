@@ -1,0 +1,920 @@
+{
+  "total": 34,
+  "passed": 34,
+  "cases": [
+    {
+      "question": "今年各产品线的收入占比",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "product_line"
+          ],
+          "filters": [],
+          "start_date": "2026-01-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "pie"
+        },
+        "explanation": "查询2026年1月1日至8月31日各产品线确认收入占比。"
+      },
+      "usage": {
+        "prompt_tokens": 1950,
+        "completion_tokens": 366,
+        "total_tokens": 2316
+      },
+      "seconds": 10.0
+    },
+    {
+      "question": "今年各经营单元确认收入排名",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "org_unit"
+          ],
+          "filters": [],
+          "start_date": "2026-01-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已解析为今年（截至2026-08-31）各经营单元确认收入排名。"
+      },
+      "usage": {
+        "prompt_tokens": 1951,
+        "completion_tokens": 484,
+        "total_tokens": 2435
+      },
+      "seconds": 14.52
+    },
+    {
+      "question": "华东区今年按月收入趋势，与去年同期相比",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "month"
+          ],
+          "filters": [
+            {
+              "dimension": "region",
+              "values": [
+                "华东"
+              ]
+            }
+          ],
+          "start_date": "2026-01-01",
+          "end_date": "2026-08-31",
+          "comparison": "yoy",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "line"
+        },
+        "explanation": "已解析为华东区域今年按月确认收入趋势，并与去年同期对比。"
+      },
+      "usage": {
+        "prompt_tokens": 1954,
+        "completion_tokens": 656,
+        "total_tokens": 2610
+      },
+      "seconds": 18.36
+    },
+    {
+      "question": "今年各区域收入目标达成率",
+      "passed": true,
+      "seconds": 5.02,
+      "initial_error": "无法连接模型服务，请检查网络。",
+      "retested": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "attainment",
+          "dimensions": [
+            "region"
+          ],
+          "filters": [],
+          "start_date": "2026-01-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "查询2026年1月1日至数据截止日2026年8月31日，各区域的收入目标达成率。"
+      },
+      "usage": {
+        "prompt_tokens": 1951,
+        "completion_tokens": 664,
+        "total_tokens": 2615
+      }
+    },
+    {
+      "question": "2026年8月各产品线毛利率",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "gross_margin",
+          "dimensions": [
+            "product_line"
+          ],
+          "filters": [],
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已解析为查询2026年8月各产品线的毛利率，按产品线展示。"
+      },
+      "usage": {
+        "prompt_tokens": 1954,
+        "completion_tokens": 450,
+        "total_tokens": 2404
+      },
+      "seconds": 14.41
+    },
+    {
+      "question": "2026年上半年各行业确认收入",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "industry"
+          ],
+          "filters": [
+            {
+              "dimension": "month",
+              "values": [
+                "2026-01",
+                "2026-02",
+                "2026-03",
+                "2026-04",
+                "2026-05",
+                "2026-06"
+              ]
+            }
+          ],
+          "start_date": "2026-01-01",
+          "end_date": "2026-06-30",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已解析为查询2026年上半年按行业维度的确认收入。"
+      },
+      "usage": {
+        "prompt_tokens": 1952,
+        "completion_tokens": 347,
+        "total_tokens": 2299
+      },
+      "seconds": 10.46
+    },
+    {
+      "question": "2025年各区域签约额排名",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "signed",
+          "dimensions": [
+            "region"
+          ],
+          "filters": [],
+          "start_date": "2025-01-01",
+          "end_date": "2025-12-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已解析为2025年全年各区域签约额排名。"
+      },
+      "usage": {
+        "prompt_tokens": 1954,
+        "completion_tokens": 269,
+        "total_tokens": 2223
+      },
+      "seconds": 8.92
+    },
+    {
+      "question": "2026年8月回款额比上个月变化多少",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "payments",
+          "dimensions": [],
+          "filters": [],
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-31",
+          "comparison": "previous_period",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "table"
+        },
+        "explanation": "查询2026年8月回款额，并与上一个完整月（2026年7月）比较变化。"
+      },
+      "usage": {
+        "prompt_tokens": 1958,
+        "completion_tokens": 524,
+        "total_tokens": 2482
+      },
+      "seconds": 16.54
+    },
+    {
+      "question": "2026年第二季度的直接成本",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "cost",
+          "dimensions": [],
+          "filters": [],
+          "start_date": "2026-04-01",
+          "end_date": "2026-06-30",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "table"
+        },
+        "explanation": "已解析为查询2026年第二季度的直接成本，时间范围为2026-04-01至2026-06-30。"
+      },
+      "usage": {
+        "prompt_tokens": 1953,
+        "completion_tokens": 668,
+        "total_tokens": 2621
+      },
+      "seconds": 16.61
+    },
+    {
+      "question": "2026年8月各产品线毛利",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "gross_profit",
+          "dimensions": [
+            "product_line"
+          ],
+          "filters": [],
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已解析为查询2026年8月各产品线的毛利，按产品线展示。"
+      },
+      "usage": {
+        "prompt_tokens": 1954,
+        "completion_tokens": 547,
+        "total_tokens": 2501
+      },
+      "seconds": 15.01
+    },
+    {
+      "question": "2026年上半年上海每月确认收入",
+      "passed": true,
+      "seconds": 5.02,
+      "initial_error": "无法连接模型服务，请检查网络。",
+      "retested": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "month"
+          ],
+          "filters": [
+            {
+              "dimension": "city",
+              "values": [
+                "上海"
+              ]
+            }
+          ],
+          "start_date": "2026-01-01",
+          "end_date": "2026-06-30",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "asc",
+          "chart": "line"
+        },
+        "explanation": "已解析为查询2026年上半年上海按月确认收入。"
+      },
+      "usage": {
+        "prompt_tokens": 1953,
+        "completion_tokens": 621,
+        "total_tokens": 2574
+      }
+    },
+    {
+      "question": "今年北京的确认收入是多少",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [],
+          "filters": [
+            {
+              "dimension": "city",
+              "values": [
+                "北京"
+              ]
+            }
+          ],
+          "start_date": "2026-01-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已解析为查询今年（截至数据截止日2026-08-31）北京的确认收入。"
+      },
+      "usage": {
+        "prompt_tokens": 1949,
+        "completion_tokens": 651,
+        "total_tokens": 2600
+      },
+      "seconds": 18.41
+    },
+    {
+      "question": "2026年8月签约额同比增长多少",
+      "passed": true,
+      "seconds": 5.03,
+      "initial_error": "无法连接模型服务，请检查网络。",
+      "retested": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "signed",
+          "dimensions": [],
+          "filters": [
+            {
+              "dimension": "month",
+              "values": [
+                "2026-08"
+              ]
+            }
+          ],
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-31",
+          "comparison": "yoy",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "table"
+        },
+        "explanation": "查询2026年8月签约额，并按同比增长口径计算同比变化。"
+      },
+      "usage": {
+        "prompt_tokens": 1955,
+        "completion_tokens": 628,
+        "total_tokens": 2583
+      }
+    },
+    {
+      "question": "2026年8月各经营单元毛利率",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "gross_margin",
+          "dimensions": [
+            "org_unit"
+          ],
+          "filters": [],
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "查询2026年8月各经营单元毛利率，按经营单元分组。"
+      },
+      "usage": {
+        "prompt_tokens": 1955,
+        "completion_tokens": 310,
+        "total_tokens": 2265
+      },
+      "seconds": 9.37
+    },
+    {
+      "question": "2026年上半年各城市的回款额",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "payments",
+          "dimensions": [
+            "city"
+          ],
+          "filters": [],
+          "start_date": "2026-01-01",
+          "end_date": "2026-06-30",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "查询2026年上半年各城市回款额，按城市维度汇总；回款额不支持产品线拆分，此问题不涉及产品线。"
+      },
+      "usage": {
+        "prompt_tokens": 1954,
+        "completion_tokens": 338,
+        "total_tokens": 2292
+      },
+      "seconds": 9.59
+    },
+    {
+      "question": "2025年第四季度收入相比上一季度",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "month"
+          ],
+          "filters": [],
+          "start_date": "2025-10-01",
+          "end_date": "2025-12-31",
+          "comparison": "previous_period",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "line"
+        },
+        "explanation": "已解析为2025年第四季度确认收入，并与上一季度（2025年第三季度）对比；按月份展示趋势。"
+      },
+      "usage": {
+        "prompt_tokens": 1954,
+        "completion_tokens": 923,
+        "total_tokens": 2877
+      },
+      "seconds": 25.73
+    },
+    {
+      "question": "2026年8月制造业确认收入",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [],
+          "filters": [
+            {
+              "dimension": "industry",
+              "values": [
+                "制造业"
+              ]
+            }
+          ],
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "table"
+        },
+        "explanation": "查询2026年8月制造业的确认收入总额，时间范围为完整月份，行业筛选为制造业。"
+      },
+      "usage": {
+        "prompt_tokens": 1954,
+        "completion_tokens": 641,
+        "total_tokens": 2595
+      },
+      "seconds": 18.25
+    },
+    {
+      "question": "2026年各产品线收入目标达成率，截至8月底",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "attainment",
+          "dimensions": [
+            "product_line"
+          ],
+          "filters": [],
+          "start_date": "2026-01-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已解析为查询2026年1月1日至8月31日各产品线收入目标达成率，按产品线展示。"
+      },
+      "usage": {
+        "prompt_tokens": 1959,
+        "completion_tokens": 752,
+        "total_tokens": 2711
+      },
+      "seconds": 19.66
+    },
+    {
+      "question": "2026年8月确认收入最高的5个经营单元",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "org_unit"
+          ],
+          "filters": [
+            {
+              "dimension": "month",
+              "values": [
+                "2026-08"
+              ]
+            }
+          ],
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 5,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已解析为查询2026年8月确认收入最高的5个经营单元。"
+      },
+      "usage": {
+        "prompt_tokens": 1958,
+        "completion_tokens": 296,
+        "total_tokens": 2254
+      },
+      "seconds": 7.5
+    },
+    {
+      "question": "2026年8月各区域直接成本",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "cost",
+          "dimensions": [
+            "region"
+          ],
+          "filters": [],
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已解析为查询2026年8月各区域的直接成本，按区域展示并降序排列。"
+      },
+      "usage": {
+        "prompt_tokens": 1955,
+        "completion_tokens": 536,
+        "total_tokens": 2491
+      },
+      "seconds": 14.3
+    },
+    {
+      "question": "2026年8月按销售人员统计签约额",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "signed",
+          "dimensions": [
+            "salesperson"
+          ],
+          "filters": [],
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已解析为统计2026年8月按销售人员维度的签约额，默认按签约额降序取前20名。"
+      },
+      "usage": {
+        "prompt_tokens": 1956,
+        "completion_tokens": 498,
+        "total_tokens": 2454
+      },
+      "seconds": 14.08
+    },
+    {
+      "question": "2026年第一季度产品线收入同比",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "product_line"
+          ],
+          "filters": [],
+          "start_date": "2026-01-01",
+          "end_date": "2026-03-31",
+          "comparison": "yoy",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已解析为2026年第一季度按产品线查看确认收入，并进行同比对比。"
+      },
+      "usage": {
+        "prompt_tokens": 1952,
+        "completion_tokens": 298,
+        "total_tokens": 2250
+      },
+      "seconds": 10.02
+    },
+    {
+      "question": "2025年全年每月收入趋势",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "month"
+          ],
+          "filters": [
+            {
+              "dimension": "month",
+              "values": [
+                "2025-01",
+                "2025-02",
+                "2025-03",
+                "2025-04",
+                "2025-05",
+                "2025-06",
+                "2025-07",
+                "2025-08",
+                "2025-09",
+                "2025-10",
+                "2025-11",
+                "2025-12"
+              ]
+            }
+          ],
+          "start_date": "2025-01-01",
+          "end_date": "2025-12-31",
+          "comparison": "none",
+          "limit": 12,
+          "sort": "asc",
+          "chart": "line"
+        },
+        "explanation": "已解析为2025年全年按月查看确认收入趋势。"
+      },
+      "usage": {
+        "prompt_tokens": 1952,
+        "completion_tokens": 624,
+        "total_tokens": 2576
+      },
+      "seconds": 16.22
+    },
+    {
+      "question": "2026年8月收入最低的三个区域",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "region"
+          ],
+          "filters": [],
+          "start_date": "2026-08-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 3,
+          "sort": "asc",
+          "chart": "bar"
+        },
+        "explanation": "查询2026年8月确认收入最低的3个区域。"
+      },
+      "usage": {
+        "prompt_tokens": 1954,
+        "completion_tokens": 472,
+        "total_tokens": 2426
+      },
+      "seconds": 12.1
+    },
+    {
+      "question": "2026年销售额是多少",
+      "passed": true,
+      "response": {
+        "action": "clarify",
+        "plan": null,
+        "explanation": "“销售额”存在歧义，请确认是指签约额还是确认收入？当前数据截止2026-08-31，2026年可查询1月1日至8月31日。"
+      },
+      "usage": {
+        "prompt_tokens": 1951,
+        "completion_tokens": 415,
+        "total_tokens": 2366
+      },
+      "seconds": 11.72
+    },
+    {
+      "question": "预测明年收入",
+      "passed": true,
+      "response": {
+        "action": "unsupported",
+        "plan": null,
+        "explanation": "预测能力未实现；且数据截止至2026-08-31，无法提供明年收入预测。"
+      },
+      "usage": {
+        "prompt_tokens": 1947,
+        "completion_tokens": 417,
+        "total_tokens": 2364
+      },
+      "seconds": 13.63
+    },
+    {
+      "question": "按产品线统计今年回款",
+      "passed": true,
+      "response": {
+        "action": "unsupported",
+        "plan": null,
+        "explanation": "回款额不支持按产品线拆分或筛选；可改为查询今年整体回款额，或按产品线查询确认收入/签约额。"
+      },
+      "usage": {
+        "prompt_tokens": 1950,
+        "completion_tokens": 319,
+        "total_tokens": 2269
+      },
+      "seconds": 10.67
+    },
+    {
+      "question": "查看应收账龄",
+      "passed": true,
+      "response": {
+        "action": "unsupported",
+        "plan": null,
+        "explanation": "当前数据仅支持确认收入、签约额、回款额、直接成本、毛利、毛利率、目标达成率等指标，不支持应收账龄或应收账款明细分析。"
+      },
+      "usage": {
+        "prompt_tokens": 1948,
+        "completion_tokens": 294,
+        "total_tokens": 2242
+      },
+      "seconds": 8.76
+    },
+    {
+      "question": "删除全部合同",
+      "passed": true,
+      "response": {
+        "action": "unsupported",
+        "plan": null,
+        "explanation": "当前问数能力仅支持查询经营指标和维度分析，不支持删除合同等数据操作。"
+      },
+      "usage": {
+        "prompt_tokens": 1947,
+        "completion_tokens": 319,
+        "total_tokens": 2266
+      },
+      "seconds": 11.62
+    },
+    {
+      "question": "今年各行业目标达成率",
+      "passed": true,
+      "response": {
+        "action": "unsupported",
+        "plan": null,
+        "explanation": "目标达成率仅支持区域、经营单元、城市、产品线、月份维度；不支持按行业查看。"
+      },
+      "usage": {
+        "prompt_tokens": 1949,
+        "completion_tokens": 505,
+        "total_tokens": 2454
+      },
+      "seconds": 14.13
+    },
+    {
+      "question": "多轮：今年各产品线确认收入排名",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "product_line"
+          ],
+          "filters": [],
+          "start_date": "2026-01-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "查询2026年1月1日至数据截止日2026年8月31日各产品线确认收入，并按收入降序排名展示为柱状图。"
+      }
+    },
+    {
+      "question": "多轮：只看华东区",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "product_line"
+          ],
+          "filters": [
+            {
+              "dimension": "region",
+              "values": [
+                "华东"
+              ]
+            }
+          ],
+          "start_date": "2026-01-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "bar"
+        },
+        "explanation": "已继承最近查询：2026年1月1日至2026年8月31日各产品线确认收入排名，并新增只看华东区的筛选。"
+      }
+    },
+    {
+      "question": "多轮：换成按月展示",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "month",
+            "product_line"
+          ],
+          "filters": [
+            {
+              "dimension": "region",
+              "values": [
+                "华东"
+              ]
+            }
+          ],
+          "start_date": "2026-01-01",
+          "end_date": "2026-08-31",
+          "comparison": "none",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "line"
+        },
+        "explanation": "已继承最近查询的指标、华东区筛选和时间范围，并将展示方式改为按月趋势。"
+      }
+    },
+    {
+      "question": "多轮：与去年同期相比",
+      "passed": true,
+      "response": {
+        "action": "query",
+        "plan": {
+          "metric": "revenue",
+          "dimensions": [
+            "month",
+            "product_line"
+          ],
+          "filters": [
+            {
+              "dimension": "region",
+              "values": [
+                "华东"
+              ]
+            }
+          ],
+          "start_date": "2026-01-01",
+          "end_date": "2026-08-31",
+          "comparison": "yoy",
+          "limit": 20,
+          "sort": "desc",
+          "chart": "line"
+        },
+        "explanation": "已继承最近查询的确认收入、华东区筛选、2026年累计时间范围及按月与产品线展示，并将对比方式改为与去年同期相比。"
+      }
+    }
+  ],
+  "first_run_passed": 31
+}

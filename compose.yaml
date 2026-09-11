@@ -1,0 +1,55 @@
+name: jingguan
+services:
+  db:
+    image: postgres:18.1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: jingguan
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup-env.py}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Missing APP_DB_PASSWORD}
+      QUERY_DB_PASSWORD: ${QUERY_DB_PASSWORD:?Missing QUERY_DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./scripts/docker-init.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d jingguan"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://app:${APP_DB_PASSWORD}@db:5432/jingguan
+      QUERY_DATABASE_URL: postgresql+psycopg://analyst:${QUERY_DB_PASSWORD}@db:5432/jingguan
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "127.0.0.1:5178:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  postgres_data:
