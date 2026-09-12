@@ -68,6 +68,22 @@ const THINKING_COPY: Record<string, string[]> = {
   ],
 };
 
+// 公网 IP 的 HTTP 页面不属于安全上下文，部分浏览器不会提供 randomUUID。
+// 消息提交后会由后端返回正式 ID；这里仅生成前端渲染期间使用的临时唯一键。
+function createClientMessageId() {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  if (typeof globalThis.crypto?.getRandomValues === "function") {
+    const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (value) => value.toString(16).padStart(2, "0"));
+    return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
+  }
+  return `message-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export default function Workbench({
   user,
   onLogout,
@@ -167,7 +183,7 @@ export default function Workbench({
       }
       setMsgs((m) => [
         ...m,
-        { id: crypto.randomUUID(), role: "user", content: question },
+        { id: createClientMessageId(), role: "user", content: question },
       ]);
       const res = await fetch("/api/conversations/" + id + "/ask", {
         method: "POST",
@@ -207,7 +223,7 @@ export default function Workbench({
         setMsgs((m) => [
           ...m,
           {
-            id: crypto.randomUUID(),
+            id: createClientMessageId(),
             role: "assistant",
             content: "本次生成已停止。",
             result: { status: "cancelled" },
