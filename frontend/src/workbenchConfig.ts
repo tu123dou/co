@@ -11,6 +11,7 @@ export type WorkbenchSettings = {
 };
 
 export type CommonQuestion = {
+  id: number;
   question: string;
   success_count: number;
   last_asked_at: string;

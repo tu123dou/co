@@ -197,7 +197,7 @@ textarea {
   margin-top: 4px;
 }
 .new-chat {
-  margin: 30px 4px 20px;
+  margin: 30px 4px 10px 10px;
   height: 42px !important;
   box-shadow: 0 4px 10px #2563eb16 !important;
 }
@@ -660,10 +660,16 @@ textarea {
   max-height: 270px;
   overflow: auto;
 }
-.quick-question-list button {
-  width: 100%;
-  border: 0;
+.quick-question-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   border-bottom: 1px solid #eef2f7;
+}
+.quick-question-list .quick-question-row > button:first-child {
+  flex: 1;
+  min-width: 0;
+  border: 0;
   background: #fff;
   color: #4c607d;
   display: flex;
@@ -675,9 +681,16 @@ textarea {
   line-height: 1.6;
   cursor: pointer;
 }
-.quick-question-list button:hover {
+.quick-question-list .quick-question-row > button:first-child:hover {
   color: #356dcd;
   background: #f7faff;
+}
+.quick-question-list .quick-question-row > .ant-btn {
+  flex: 0 0 auto;
+  color: #8b98aa;
+}
+.quick-question-list .quick-question-row > .ant-btn:hover {
+  color: #315fe9;
 }
 .quick-question-list .ant-tag {
   flex-shrink: 0;
@@ -720,6 +733,9 @@ textarea {
 }
 .user-message > .ant-btn {
   color: #9bb0cc;
+}
+.user-message > .ant-btn.favorite-active {
+  color: #f5a623;
 }
 .assistant-row {
   display: flex;

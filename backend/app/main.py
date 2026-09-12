@@ -423,6 +423,7 @@ def common_questions(user: User):
             dict(row)
             for row in conn.execute(
                 select(
+                    s.user_question_stats.c.id,
                     s.user_question_stats.c.question,
                     s.user_question_stats.c.success_count,
                     s.user_question_stats.c.last_asked_at,
@@ -439,6 +440,21 @@ def common_questions(user: User):
                 .limit(20)
             ).mappings()
         ]
+
+
+@app.delete("/api/common-questions/{question_id}")
+def delete_common_question(question_id: int, user: User):
+    """删除当前用户的问题频次记录，使其从常见问题中消失。"""
+    with engine.begin() as conn:
+        result = conn.execute(
+            delete(s.user_question_stats).where(
+                s.user_question_stats.c.id == question_id,
+                s.user_question_stats.c.user_id == user["id"],
+            )
+        )
+    if result.rowcount == 0:
+        raise HTTPException(404, "常见问题不存在")
+    return {"ok": True}
 
 
 @app.get("/api/favorites")

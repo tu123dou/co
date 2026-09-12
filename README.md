@@ -4,6 +4,9 @@ React + Python + PostgreSQL 的本地经营分析工作台。真实调用百炼 
 
 ## 云服务器部署（暂未配置域名）
 
+登录服务器 workbench connect -i i-2vcgdfqug0vm5icpp2nm
+cd /opt/ai-wenshu/co
+
 前端镜像已经内置 Nginx，并会把 `/api` 转发到后端，因此无需在宿主机重复安装 Nginx。以公网 IP `8.137.78.125` 直接提供 HTTP 服务时，在服务器 `.env` 中设置：
 
 ```dotenv

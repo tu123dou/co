@@ -20,6 +20,7 @@ import {
   PlusOutlined,
   MessageOutlined,
   StarOutlined,
+  StarFilled,
   DatabaseOutlined,
   SettingOutlined,
   LogoutOutlined,
@@ -274,53 +275,75 @@ export default function Workbench({
   );
   const favorite = async (q: string) => {
     try {
-      await post("/favorites", { question: q });
+      const saved = favorites.find((item) => item.question === q);
+      if (saved) {
+        await api("/favorites/" + saved.id, { method: "DELETE" });
+      } else {
+        await post("/favorites", { question: q });
+      }
       setFavorites(await api("/favorites"));
-      message.success("已收藏问题");
+      message.success(saved ? "已取消收藏" : "已收藏问题");
     } catch (e) {
       message.error((e as Error).message);
+    }
+  };
+  const removeFavorite = async (id: number) => {
+    await api("/favorites/" + id, { method: "DELETE" });
+    setFavorites(await api("/favorites"));
+    message.success("已取消收藏");
+  };
+  const removeCommonQuestion = async (id: number) => {
+    await api("/common-questions/" + id, { method: "DELETE" });
+    setCommonQuestions(await api("/common-questions"));
+    message.success("已删除常见问题");
+  };
+  const handleConversationAction = (c: any, key: string) => {
+    if (key === "pin") {
+      api("/conversations/" + c.id, {
+        method: "PATCH",
+        body: JSON.stringify({ pinned: !c.pinned }),
+      })
+        .then(refresh)
+        .catch((e) => message.error(e.message));
+      return;
+    }
+    if (key === "rename") {
+      setRename(c);
+      setRenameText(c.title);
+      return;
+    }
+    if (key === "delete") {
+      Modal.confirm({
+        title: "删除这个会话？",
+        content: "会话、回答和相关反馈将一起删除。",
+        okText: "删除",
+        cancelText: "取消",
+        okButtonProps: { danger: true },
+        onOk: async () => {
+          await api("/conversations/" + c.id, { method: "DELETE" });
+          if (cid === c.id) {
+            setCid(null);
+            setMsgs([]);
+          }
+          await refresh();
+          message.success("会话已删除");
+        },
+      });
     }
   };
   const actions = (c: any) => [
     {
       key: "pin",
       label: c.pinned ? "取消置顶" : "置顶",
-      onClick: () =>
-        api("/conversations/" + c.id, {
-          method: "PATCH",
-          body: JSON.stringify({ pinned: !c.pinned }),
-        })
-          .then(refresh)
-          .catch((e) => message.error(e.message)),
     },
     {
       key: "rename",
       label: "重命名",
-      onClick: () => {
-        setRename(c);
-        setRenameText(c.title);
-      },
     },
     {
       key: "delete",
       label: "删除会话",
       danger: true,
-      onClick: () =>
-        Modal.confirm({
-          title: "删除这个会话？",
-          content: "会话、回答和相关反馈将一起删除。",
-          okText: "删除",
-          cancelText: "取消",
-          okButtonProps: { danger: true },
-          onOk: async () => {
-            await api("/conversations/" + c.id, { method: "DELETE" });
-            if (cid === c.id) {
-              setCid(null);
-              setMsgs([]);
-            }
-            await refresh();
-          },
-        }),
     },
   ];
   return (
@@ -406,7 +429,10 @@ export default function Workbench({
                       {c.title}
                     </button>
                     <Dropdown
-                      menu={{ items: actions(c) }}
+                      menu={{
+                        items: actions(c),
+                        onClick: ({ key }) => handleConversationAction(c, key),
+                      }}
                       trigger={["click"]}
                       disabled={busy}
                     >
@@ -620,11 +646,26 @@ export default function Workbench({
                 m.role === "user" ? (
                   <div key={m.id} className="user-message">
                     <div>{m.content}</div>
-                    <Tooltip title="收藏问题">
+                    <Tooltip
+                      title={
+                        favorites.some((item) => item.question === m.content)
+                          ? "取消收藏"
+                          : "收藏问题"
+                      }
+                    >
                       <Button
                         type="text"
                         size="small"
-                        icon={<StarOutlined />}
+                        className={
+                          favorites.some((item) => item.question === m.content)
+                            ? "favorite-active"
+                            : ""
+                        }
+                        icon={
+                          favorites.some((item) => item.question === m.content)
+                            ? <StarFilled />
+                            : <StarOutlined />
+                        }
                         onClick={() => favorite(m.content)}
                       />
                     </Tooltip>
@@ -698,6 +739,8 @@ export default function Workbench({
                   common={commonQuestions}
                   favorites={favorites}
                   commonEnabled={workbenchSettings.common_questions_enabled}
+                  onRemoveCommon={removeCommonQuestion}
+                  onRemoveFavorite={removeFavorite}
                   onPick={(question) => {
                     setInput(question);
                     setQuickOpen(false);
@@ -866,8 +909,7 @@ export default function Workbench({
                   <Popconfirm
                     title="取消收藏这个问题？"
                     onConfirm={async () => {
-                      await api("/favorites/" + f.id, { method: "DELETE" });
-                      setFavorites(await api("/favorites"));
+                      await removeFavorite(f.id);
                     }}
                   >
                     <Button type="text" size="small">

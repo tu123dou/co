@@ -1,5 +1,5 @@
-import { Empty, Popover, Tabs, Tag } from "antd";
-import { StarOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import { Button, Empty, Popconfirm, Popover, Tabs, Tag, Tooltip } from "antd";
+import { DeleteOutlined, StarFilled, ThunderboltOutlined } from "@ant-design/icons";
 import type { CommonQuestion } from "./workbenchConfig";
 
 export default function QuickQuestions({
@@ -9,6 +9,8 @@ export default function QuickQuestions({
   favorites,
   commonEnabled,
   onPick,
+  onRemoveCommon,
+  onRemoveFavorite,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -16,15 +18,33 @@ export default function QuickQuestions({
   favorites: any[];
   commonEnabled: boolean;
   onPick: (question: string) => void;
+  onRemoveCommon: (id: number) => Promise<void>;
+  onRemoveFavorite: (id: number) => Promise<void>;
 }) {
-  const list = (rows: Array<{ question: string; success_count?: number }>) =>
+  const list = (
+    rows: Array<{ id: number; question: string; success_count?: number }>,
+    remove: (id: number) => Promise<void>,
+    removeTitle: string,
+  ) =>
     rows.length ? (
       <div className="quick-question-list">
         {rows.map((row) => (
-          <button key={row.question} onClick={() => onPick(row.question)}>
-            <span>{row.question}</span>
-            {row.success_count != null && <Tag>{row.success_count} 次</Tag>}
-          </button>
+          <div className="quick-question-row" key={row.id}>
+            <button onClick={() => onPick(row.question)}>
+              <span>{row.question}</span>
+              {row.success_count != null && <Tag>{row.success_count} 次</Tag>}
+            </button>
+            <Popconfirm title={removeTitle} onConfirm={() => remove(row.id)}>
+              <Tooltip title={removeTitle}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={row.success_count == null ? <StarFilled /> : <DeleteOutlined />}
+                  aria-label={removeTitle}
+                />
+              </Tooltip>
+            </Popconfirm>
+          </div>
         ))}
       </div>
     ) : (
@@ -52,17 +72,17 @@ export default function QuickQuestions({
             {
               key: "common",
               label: "常见",
-              children: list(common),
+              children: list(common, onRemoveCommon, "删除这个常见问题？"),
             },
             {
               key: "favorites",
               label: (
                 <span>
-                  <StarOutlined /> 收藏
+                  <StarFilled /> 收藏
                 </span>
               ),
               children: favorites.length ? (
-                list(favorites)
+                list(favorites, onRemoveFavorite, "取消收藏这个问题？")
               ) : (
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
