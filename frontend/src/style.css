@@ -1286,7 +1286,7 @@ textarea {
   gap: 12px;
   background: #fff;
 }
-.setting-card > div {
+.setting-card > .setting-content {
   min-width: 0;
 }
 .setting-card h3 {
@@ -1298,25 +1298,22 @@ textarea {
   font-size: 12px;
   line-height: 1.55;
 }
-.setting-card > .ant-switch,
-.setting-card > .ant-tag {
+.setting-actions {
   grid-column: 3;
   grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
   align-self: center;
-  margin: 0;
 }
-.setting-card > .ant-btn {
-  grid-column: 2;
-  grid-row: 2;
-  justify-self: start;
-  align-self: end;
+.setting-actions > .ant-btn {
   color: #8b98aa;
-  padding-inline: 0;
+  font-size: 18px;
+  padding-inline: 4px;
 }
-.setting-card:has(> .ant-btn) > .ant-switch,
-.setting-card:has(> .ant-btn) > .ant-tag {
-  grid-row: 2;
-  align-self: end;
+.setting-actions > .ant-tag {
+  margin-inline-end: 0;
 }
 .setting-icon {
   width: 44px;

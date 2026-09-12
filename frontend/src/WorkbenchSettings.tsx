@@ -98,64 +98,72 @@ export default function WorkbenchSettingsPanel({
       <div className="settings-grid">
         <div className="setting-card">
           <span className="setting-icon blue"><CommentOutlined /></span>
-          <div>
+          <div className="setting-content">
             <h3>对话开场白</h3>
             <p>配置新对话的欢迎文案和开场问题</p>
           </div>
-          <Button
-            type="text"
-            icon={<SettingOutlined />}
-            onClick={() => openModal("welcome")}
-            aria-label="配置对话开场白"
-          />
-          <Switch
-            checked={settings.welcome_enabled}
-            onChange={(checked) => toggle("welcome_enabled", checked)}
-          />
+          <div className="setting-actions">
+            <Button
+              type="text"
+              icon={<SettingOutlined />}
+              onClick={() => openModal("welcome")}
+              aria-label="配置对话开场白"
+            />
+            <Switch
+              checked={settings.welcome_enabled}
+              onChange={(checked) => toggle("welcome_enabled", checked)}
+            />
+          </div>
         </div>
         <div className="setting-card">
           <span className="setting-icon amber"><UnorderedListOutlined /></span>
-          <div>
+          <div className="setting-content">
             <h3>下一步问题建议</h3>
             <p>在回答下方展示相关延伸问题</p>
           </div>
-          <Switch
-            checked={settings.suggestions_enabled}
-            onChange={(checked) => toggle("suggestions_enabled", checked)}
-          />
+          <div className="setting-actions">
+            <Switch
+              checked={settings.suggestions_enabled}
+              onChange={(checked) => toggle("suggestions_enabled", checked)}
+            />
+          </div>
         </div>
         <div className="setting-card">
           <span className="setting-icon violet"><RobotOutlined /></span>
-          <div>
+          <div className="setting-content">
             <h3>模型配置</h3>
             <p>{settings.llm_model}</p>
           </div>
-          <Button
-            type="text"
-            icon={<SettingOutlined />}
-            onClick={() => openModal("model")}
-            aria-label="配置模型"
-          />
-          <Tag color={modelConfigured ? "green" : "orange"}>
-            {modelConfigured ? "已连接" : "未配置"}
-          </Tag>
+          <div className="setting-actions">
+            <Button
+              type="text"
+              icon={<SettingOutlined />}
+              onClick={() => openModal("model")}
+              aria-label="配置模型"
+            />
+            <Tag color={modelConfigured ? "green" : "orange"}>
+              {modelConfigured ? "已连接" : "未配置"}
+            </Tag>
+          </div>
         </div>
         <div className="setting-card">
           <span className="setting-icon orange"><FireOutlined /></span>
-          <div>
+          <div className="setting-content">
             <h3>常见问题</h3>
             <p>成功提问满 {settings.common_question_threshold} 次后展示</p>
           </div>
-          <Button
-            type="text"
-            icon={<SettingOutlined />}
-            onClick={() => openModal("common")}
-            aria-label="配置常见问题"
-          />
-          <Switch
-            checked={settings.common_questions_enabled}
-            onChange={(checked) => toggle("common_questions_enabled", checked)}
-          />
+          <div className="setting-actions">
+            <Button
+              type="text"
+              icon={<SettingOutlined />}
+              onClick={() => openModal("common")}
+              aria-label="配置常见问题"
+            />
+            <Switch
+              checked={settings.common_questions_enabled}
+              onChange={(checked) => toggle("common_questions_enabled", checked)}
+            />
+          </div>
         </div>
       </div>
 
