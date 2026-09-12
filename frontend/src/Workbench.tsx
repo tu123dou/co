@@ -35,11 +35,38 @@ import {
   SearchOutlined,
   ApartmentOutlined,
   HistoryOutlined,
+  ReloadOutlined,
+  ControlOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { api, post } from "./api";
 
 import type { Msg } from "./types";
 import Answer from "./QueryAnswer";
+import QuickQuestions from "./QuickQuestions";
+import WorkbenchSettingsPanel from "./WorkbenchSettings";
+import FeedbackManagement from "./FeedbackManagement";
+import {
+  DEFAULT_WORKBENCH_SETTINGS,
+  type CommonQuestion,
+  type WorkbenchSettings,
+} from "./workbenchConfig";
+
+// 等待回答时按真实处理阶段轮换提示，避免长时间显示不变的技术步骤。
+const THINKING_COPY: Record<string, string[]> = {
+  理解问题: [
+    "正在识别指标、时间范围和筛选条件",
+    "正在匹配业务口径与相关数据表",
+  ],
+  执行取数: [
+    "正在组织查询逻辑并校验取数范围",
+    "正在查询数据，请稍候",
+  ],
+  整理结果: [
+    "正在核对查询结果与关键数值",
+    "正在整理分析结论和展示内容",
+  ],
+};
 
 export default function Workbench({
   user,
@@ -48,14 +75,21 @@ export default function Workbench({
   user: any;
   onLogout: () => void;
 }) {
-  const [catalog, setCatalog] = useState<any>(null),
+  const [page, setPage] = useState<"ask" | "settings" | "feedback">("ask"),
+    [catalog, setCatalog] = useState<any>(null),
+    [workbenchSettings, setWorkbenchSettings] = useState<WorkbenchSettings>(
+      DEFAULT_WORKBENCH_SETTINGS,
+    ),
+    [commonQuestions, setCommonQuestions] = useState<CommonQuestion[]>([]),
+    [quickOpen, setQuickOpen] = useState(false),
+    [questionOffset, setQuestionOffset] = useState(0),
     [conversations, setConversations] = useState<any[]>([]),
     [cid, setCid] = useState<string | null>(null),
     [msgs, setMsgs] = useState<Msg[]>([]),
     [input, setInput] = useState(""),
     [busy, setBusy] = useState(false),
     [stage, setStage] = useState(""),
-    [detail, setDetail] = useState(""),
+    [thinkingIndex, setThinkingIndex] = useState(0),
     [drawer, setDrawer] = useState(""),
     [favorites, setFavorites] = useState<any[]>([]),
     [search, setSearch] = useState(""),
@@ -71,18 +105,32 @@ export default function Workbench({
     end = useRef<HTMLDivElement>(null),
     sending = useRef(false);
   const refresh = () => api("/conversations").then(setConversations);
+  const refreshCommonQuestions = () =>
+    api("/common-questions").then(setCommonQuestions);
   useEffect(() => {
     Promise.all([
       api("/catalog").then(setCatalog),
+      api("/workbench/settings").then(setWorkbenchSettings),
+      refreshCommonQuestions(),
       refresh(),
       api("/favorites").then(setFavorites),
     ]).catch((e) => setError(e.message));
   }, []);
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth" });
-  }, [msgs, stage]);
+  }, [msgs, stage, thinkingIndex]);
+  useEffect(() => {
+    if (!busy) return;
+    setThinkingIndex(0);
+    const timer = window.setInterval(
+      () => setThinkingIndex((current) => current + 1),
+      2400,
+    );
+    return () => window.clearInterval(timer);
+  }, [busy, stage]);
   async function loadConversation(id: string) {
     if (sending.current) return;
+    setPage("ask");
     setLoadingChat(true);
     setError("");
     try {
@@ -107,7 +155,7 @@ export default function Workbench({
     setInput("");
     setError("");
     setStage("理解问题");
-    setDetail("正在连接问数服务");
+    setThinkingIndex(0);
     const controller = new AbortController();
     abort.current = controller;
     let id = cid;
@@ -146,7 +194,6 @@ export default function Workbench({
           const event = JSON.parse(line);
           if (event.type === "status") {
             setStage(event.stage);
-            setDetail(event.detail);
           }
           if (event.type === "result") {
             gotResult = true;
@@ -175,8 +222,40 @@ export default function Workbench({
       setBusy(false);
       abort.current = null;
       refresh().catch(() => {});
+      refreshCommonQuestions().catch(() => {});
     }
   }
+  const saveWorkbenchSettings = async (
+    values: Partial<WorkbenchSettings>,
+  ) => {
+    const updated = await api("/workbench/settings", {
+      method: "PATCH",
+      body: JSON.stringify(values),
+    });
+    setWorkbenchSettings(updated);
+    if ("starter_questions" in values) setQuestionOffset(0);
+    setCatalog((current: any) =>
+      current
+        ? { ...current, model: { ...current.model, name: updated.llm_model } }
+        : current,
+    );
+    if (
+      "common_questions_enabled" in values ||
+      "common_question_threshold" in values
+    ) {
+      setCommonQuestions(await api("/common-questions"));
+    }
+  };
+  const questionPool = Array.from(
+    new Set([
+      ...workbenchSettings.starter_questions,
+      ...(catalog?.examples || []),
+    ]),
+  );
+  const visibleStarterQuestions = Array.from(
+    { length: Math.min(6, questionPool.length) },
+    (_, index) => questionPool[(questionOffset + index) % questionPool.length],
+  );
   const favorite = async (q: string) => {
     try {
       await post("/favorites", { question: q });
@@ -248,6 +327,7 @@ export default function Workbench({
           icon={<PlusOutlined />}
           disabled={busy}
           onClick={() => {
+            setPage("ask");
             setCid(null);
             setMsgs([]);
             setError("");
@@ -264,21 +344,17 @@ export default function Workbench({
           >
             <HistoryOutlined />
           </button>
-          <button className="nav-item active" onClick={() => setDrawer("")}>
+          <button className={"nav-item " + (page === "ask" ? "active" : "")} onClick={() => { setPage("ask"); setDrawer(""); }}>
             <MessageOutlined />
             {!collapsed && "智能问数"}
           </button>
-          <button className="nav-item" onClick={() => setDrawer("favorites")}>
-            <StarOutlined />
-            {!collapsed && (
-              <>
-                收藏问题<span className="nav-count">{favorites.length}</span>
-              </>
-            )}
+          <button className={"nav-item " + (page === "settings" ? "active" : "")} onClick={() => setPage("settings")}>
+            <ControlOutlined />
+            {!collapsed && "应用配置"}
           </button>
-          <button className="nav-item" onClick={() => setDrawer("catalog")}>
-            <DatabaseOutlined />
-            {!collapsed && "数据与指标"}
+          <button className={"nav-item " + (page === "feedback" ? "active" : "")} onClick={() => setPage("feedback")}>
+            <ExclamationCircleOutlined />
+            {!collapsed && "回复校对"}
           </button>
         </nav>
         {!collapsed && (
@@ -334,10 +410,6 @@ export default function Workbench({
           </div>
         )}
         <div className="sidebar-bottom">
-          <button className="nav-item" onClick={() => setDrawer("settings")}>
-            <SettingOutlined />
-            {!collapsed && "工作台设置"}
-          </button>
           <div className="user-row">
             <span className="avatar">管</span>
             {!collapsed && (
@@ -359,7 +431,7 @@ export default function Workbench({
           </div>
         </div>
       </aside>
-      <main className="main">
+      <main className={"main page-" + page}>
         <header className="topbar">
           <div>
             <Button
@@ -369,18 +441,41 @@ export default function Workbench({
               aria-label="切换侧栏"
             />
             <span className="breadcrumb">
-              工作空间 <span>/</span> <b>智能问数</b>
+              {page === "ask" ? "工作空间" : page === "settings" ? "系统管理" : "反馈管理"} <span>/</span>{" "}
+              <b>{page === "ask" ? "智能问数" : page === "settings" ? "应用配置" : "回复校对"}</b>
             </span>
           </div>
           <div className="topbar-right">
             <Tag color="blue" bordered={false}>
-              模拟经营数据
+              经营数据
             </Tag>
             <span className="dataset-date">
               更新至 {catalog?.dataset?.cutoff_date || "—"}
             </span>
           </div>
         </header>
+        {page === "settings" && <div className="management-page settings-page">
+          <div className="page-path">系统管理 <span>/</span> <b>应用配置</b></div>
+          <section className="management-card">
+            <div className="management-heading"><ControlOutlined /><strong>应用配置</strong><span>以下设置仅对当前用户生效</span></div>
+            <WorkbenchSettingsPanel
+              settings={workbenchSettings}
+              models={catalog?.model.available || []}
+              modelConfigured={Boolean(catalog?.model.configured)}
+              testing={testing}
+              onSave={saveWorkbenchSettings}
+              onTest={async (model) => {
+                setTesting(true);
+                try {
+                  const result = await post("/model/test", { model });
+                  message.success(`${result.model} 连接成功，耗时 ${(result.duration_ms / 1000).toFixed(1)} 秒`);
+                } catch (error) { message.error((error as Error).message); }
+                finally { setTesting(false); }
+              }}
+            />
+          </section>
+        </div>}
+        {page === "feedback" && <FeedbackManagement />}
         <div className="conversation-top">
           <div>
             <MessageOutlined />
@@ -392,14 +487,14 @@ export default function Workbench({
             <Button
               size="small"
               type="text"
-              onClick={() => setDrawer("settings")}
+              onClick={() => setPage("settings")}
             >
               <span
                 className={
                   "model-dot " + (catalog?.model.configured ? "ready" : "")
                 }
               />
-              {catalog?.model.name || "qwen3.8-max"}
+              {workbenchSettings.llm_model}
             </Button>
           </Tooltip>
         </div>
@@ -420,63 +515,77 @@ export default function Workbench({
               <Spin />
             </div>
           ) : !msgs.length ? (
-            <div className="welcome">
-              <div className="welcome-mark">
-                <BarChartOutlined />
-              </div>
-              <span className="eyebrow">你的经营分析伙伴</span>
-              <h1>你好，今天想了解哪些数据？</h1>
-              <p>从收入趋势到目标达成，用自然语言探索你的经营数据。</p>
-              <div className="capability-tags">
-                <span>
-                  <CheckCircleOutlined /> 真实 SQL 取数
-                </span>
-                <span>
-                  <LineChartOutlined /> 图表自动呈现
-                </span>
-                <span>
-                  <MessageOutlined /> 支持连续追问
-                </span>
-              </div>
-              <div className="suggestion-heading">
-                <span>从一个问题开始</span>
-                <span>
-                  你可以这样问 <ArrowRightOutlined />
-                </span>
-              </div>
-              <div className="question-grid">
-                {(
-                  catalog?.examples || [
-                    "今年各经营单元确认收入排名",
-                    "今年各产品线的收入占比",
-                    "华东区今年按月收入趋势，与去年同期相比",
-                    "2026年8月各产品线毛利率",
-                    "今年各区域收入目标达成率",
-                    "2026年8月回款额比上个月变化多少",
-                  ]
-                ).map((q: string, i: number) => (
-                  <button
-                    key={q}
-                    disabled={busy || !catalog}
-                    onClick={() => ask(q)}
-                  >
-                    <span className={"question-icon qi-" + i}>
-                      {
-                        [
-                          <BarChartOutlined />,
-                          <PieChartOutlined />,
-                          <LineChartOutlined />,
-                          <ApartmentOutlined />,
-                          <CheckCircleOutlined />,
-                          <DatabaseOutlined />,
-                        ][i]
-                      }
+            <div
+              className={
+                "welcome " +
+                (workbenchSettings.welcome_enabled ? "" : "welcome-disabled")
+              }
+            >
+              {workbenchSettings.welcome_enabled && (
+                <>
+                  <div className="welcome-mark">
+                    <BarChartOutlined />
+                  </div>
+                  <span className="eyebrow">你的经营分析伙伴</span>
+                  <h1>{workbenchSettings.welcome_title}</h1>
+                  <p>{workbenchSettings.welcome_message}</p>
+                  <div className="capability-tags">
+                    <span>
+                      <CheckCircleOutlined /> 真实 SQL 取数
                     </span>
-                    <span>{q}</span>
-                    <ArrowRightOutlined />
-                  </button>
-                ))}
-              </div>
+                    <span>
+                      <LineChartOutlined /> 图表自动呈现
+                    </span>
+                    <span>
+                      <MessageOutlined /> 支持连续追问
+                    </span>
+                  </div>
+                  {visibleStarterQuestions.length > 0 && (
+                    <>
+                      <div className="suggestion-heading">
+                        <span>从一个问题开始</span>
+                        <button
+                          className="suggestion-refresh"
+                          disabled={questionPool.length <= 6}
+                          onClick={() =>
+                            setQuestionOffset(
+                              (current) => (current + 6) % questionPool.length,
+                            )
+                          }
+                        >
+                          <ReloadOutlined /> 换一批
+                        </button>
+                      </div>
+                      <div className="question-grid">
+                        {visibleStarterQuestions.map(
+                          (q: string, i: number) => (
+                            <button
+                              key={q}
+                              disabled={busy || !catalog}
+                              onClick={() => ask(q)}
+                            >
+                              <span className={"question-icon qi-" + (i % 6)}>
+                                {
+                                  [
+                                    <BarChartOutlined />,
+                                    <PieChartOutlined />,
+                                    <LineChartOutlined />,
+                                    <ApartmentOutlined />,
+                                    <CheckCircleOutlined />,
+                                    <DatabaseOutlined />,
+                                  ][i % 6]
+                                }
+                              </span>
+                              <span>{q}</span>
+                              <ArrowRightOutlined />
+                            </button>
+                          ),
+                        )}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
               <div className="data-context">
                 <DatabaseOutlined />
                 <span>
@@ -518,28 +627,21 @@ export default function Workbench({
                   <div className="assistant-icon">
                     <BarChartOutlined />
                   </div>
-                  <div>
-                    <div>
+                  <div className="thinking-state">
+                    <div className="thinking-title">
                       <Spin size="small" />
-                      <strong>{stage}</strong>
+                      <strong>正在思考</strong>
+                      <span className="thinking-dots" aria-hidden="true">
+                        <i />
+                        <i />
+                        <i />
+                      </span>
                     </div>
-                    <p>{detail}</p>
-                    <div className="progress-steps">
-                      {["理解问题", "执行取数", "整理结果"].map((s, i) => (
-                        <span
-                          key={s}
-                          className={
-                            ["理解问题", "执行取数", "整理结果"].indexOf(
-                              stage,
-                            ) >= i
-                              ? "current"
-                              : ""
-                          }
-                        >
-                          {i + 1} {s}
-                        </span>
-                      ))}
-                    </div>
+                    <p key={`${stage}-${thinkingIndex}`}>
+                      {(THINKING_COPY[stage] || ["正在理解你的问题并准备查询"])[
+                        thinkingIndex % (THINKING_COPY[stage]?.length || 1)
+                      ]}
+                    </p>
                   </div>
                 </div>
               )}
@@ -573,9 +675,22 @@ export default function Workbench({
               disabled={loadingChat}
             />
             <div className="composer-bottom">
-              <button onClick={() => setDrawer("catalog")}>
-                <DatabaseOutlined /> 企业经营数据 <span>12 张业务表</span>
-              </button>
+              <div className="composer-left-actions">
+                <QuickQuestions
+                  open={quickOpen}
+                  onOpenChange={setQuickOpen}
+                  common={commonQuestions}
+                  favorites={favorites}
+                  commonEnabled={workbenchSettings.common_questions_enabled}
+                  onPick={(question) => {
+                    setInput(question);
+                    setQuickOpen(false);
+                  }}
+                />
+                <button onClick={() => setDrawer("catalog")}>
+                  <DatabaseOutlined /> 企业经营数据 <span>13 张业务表</span>
+                </button>
+              </div>
               <div>
                 <span className="enter-hint">
                   Enter 发送 · Shift + Enter 换行
@@ -603,7 +718,7 @@ export default function Workbench({
             </div>
           </div>
           <p className="composer-note">
-            数据由系统模拟生成，仅用于产品演示与验证。相对时间以数据截止日为准，重要决策请核对口径。
+            相对时间以数据截止日为准，重要决策请核对指标口径。
           </p>
         </footer>
       </main>
@@ -647,7 +762,7 @@ export default function Workbench({
           <>
             <Alert
               type="info"
-              message="企业软件与服务 · 模拟经营数据"
+              message="算力基础设施与服务 · 经营数据"
               description={`覆盖 ${catalog.dataset.start_date} 至 ${catalog.dataset.cutoff_date}，固定种子生成，所有金额采用不含税管理口径。`}
               showIcon
             />
@@ -698,14 +813,17 @@ export default function Workbench({
                         columns={[
                           { title: "数据表", dataIndex: "table" },
                           {
+                            title: "数据表描述",
+                            dataIndex: "description",
+                          },
+                          {
                             title: "记录数",
                             dataIndex: "count",
                             align: "right",
                           },
                         ]}
-                        dataSource={Object.entries(catalog.dataset.counts).map(
-                          ([table, count]) => ({ table, count }),
-                        )}
+                        dataSource={catalog.data_tables || []}
+                        scroll={{ x: 620 }}
                       />
                     </>
                   ),
@@ -746,46 +864,6 @@ export default function Workbench({
           ) : (
             <Empty description="点击问题旁的星标，即可收藏" />
           ))}
-        {drawer === "settings" && (
-          <div className="settings">
-            <h3>模型连接</h3>
-            <p>模型：{catalog?.model.name || "qwen3.8-max"}</p>
-            <Tag color={catalog?.model.configured ? "green" : "orange"}>
-              {catalog?.model.configured
-                ? "API Key 已配置"
-                : "尚未配置 API Key"}
-            </Tag>
-            <p>模型凭据仅保存在后端环境配置，不向浏览器返回。</p>
-            <Button
-              loading={testing}
-              onClick={async () => {
-                setTesting(true);
-                try {
-                  const r = await post("/model/test");
-                  message.success(
-                    `连接成功，耗时 ${(r.duration_ms / 1000).toFixed(1)} 秒`,
-                  );
-                } catch (e) {
-                  message.error((e as Error).message);
-                } finally {
-                  setTesting(false);
-                }
-              }}
-            >
-              测试模型连接
-            </Button>
-            <hr />
-            <h3>关于工作台</h3>
-            <p>经管之星 v0.1 · 本地部署</p>
-            <p>PostgreSQL 业务数据 · 只读问数查询</p>
-            <p>数据版本：{catalog?.dataset.version}</p>
-            <Alert
-              message="支持范围"
-              description="支持指标汇总、排名、趋势、占比、同比/环比及目标达成。复杂归因、预测、应收账龄和产品线回款分摊暂不支持。"
-              type="info"
-            />
-          </div>
-        )}
       </Drawer>
       <Modal
         title="回答反馈"

@@ -116,7 +116,7 @@ export default function App() {
             </Button>
           </Form>
           <div className="login-note">
-            <SafetyCertificateOutlined /> 本地部署 · 业务数据为模拟生成
+            <SafetyCertificateOutlined /> 本地部署 · 数据安全可控
           </div>
         </div>
       </div>

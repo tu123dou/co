@@ -1,3 +1,5 @@
+"""Alembic 运行环境：加载 SQLAlchemy 元数据并执行离线或在线迁移。"""
+
 from alembic import context
 from sqlalchemy import create_engine, pool
 from app.config import settings

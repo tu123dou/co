@@ -1,4 +1,5 @@
 #!/bin/sh
+# 本地开发入口：准备 Python、前端和嵌入式 PostgreSQL 依赖后启动各服务。
 set -eu
 cd "$(dirname "$0")/.."
 mkdir -p .runtime

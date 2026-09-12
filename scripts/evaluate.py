@@ -1,4 +1,4 @@
-"""Explicit, paid live-model evaluation. No credentials are written to the report."""
+"""真实模型评测脚本：显式调用付费接口，报告中不写入任何凭据。"""
 
 import asyncio, json, sys, time
 from pathlib import Path

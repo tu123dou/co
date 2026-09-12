@@ -1,5 +1,17 @@
 import { useEffect, useRef } from "react";
 import type { Row } from "./types";
+
+// 图表统一最多显示两位小数；整数不额外补零，避免 Tooltip 暴露计算精度尾数。
+const formatChartNumber = (value: unknown) => {
+  const number = Number(value);
+  return Number.isFinite(number)
+    ? number.toLocaleString("zh-CN", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      })
+    : "—";
+};
+
 export default function Chart({
   rows,
   type,
@@ -32,7 +44,15 @@ export default function Chart({
           "#7eb7d7",
         ],
         textStyle: { fontFamily: "inherit" },
-        tooltip: { trigger: pie ? "item" : "axis", confine: true },
+        tooltip: {
+          trigger: pie ? "item" : "axis",
+          confine: true,
+          // 柱状图和折线图中的金额已经换算成万元，这里只控制展示精度。
+          ...(!pie && {
+            valueFormatter: (value: unknown) =>
+              `${formatChartNumber(value)}${money ? " 万元" : "%"}`,
+          }),
+        },
         legend: {
           show: pie || comparison,
           bottom: 0,
@@ -67,7 +87,10 @@ export default function Chart({
               name: money ? "万元" : "%",
               nameTextStyle: { color: "#8a96a8" },
               splitLine: { lineStyle: { color: "#edf1f7", type: "dashed" } },
-              axisLabel: { color: "#79869a" },
+              axisLabel: {
+                color: "#79869a",
+                formatter: (value: unknown) => formatChartNumber(value),
+              },
             },
         series: pie
           ? [

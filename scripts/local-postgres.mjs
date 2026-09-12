@@ -1,3 +1,4 @@
+// 本地 PostgreSQL 管理脚本：启动嵌入式数据库并维护开发环境进程状态。
 import EmbeddedPostgres from '../.runtime/pg-tools/node_modules/embedded-postgres/dist/index.js';
 import fs from 'node:fs';
 import path from 'node:path';

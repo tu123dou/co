@@ -5,7 +5,13 @@ export type Row = {
   change: number | null;
   difference: number | null;
 };
-export type Msg = { id: string; role: string; content: string; result?: any };
+export type Msg = {
+  id: string;
+  role: string;
+  content: string;
+  created_at?: string;
+  result?: any;
+};
 export const format = (n: number | null, unit = "元") =>
   n == null
     ? "—"

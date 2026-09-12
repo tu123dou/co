@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/queryanswer.tsx","./src/querychart.tsx","./src/workbench.tsx","./src/api.ts","./src/echarts.ts","./src/main.tsx","./src/types.ts","./vite.config.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/feedbackmanagement.tsx","./src/queryanswer.tsx","./src/querychart.tsx","./src/quickquestions.tsx","./src/workbench.tsx","./src/workbenchsettings.tsx","./src/api.ts","./src/echarts.ts","./src/main.tsx","./src/types.ts","./src/workbenchconfig.ts","./vite.config.ts"],"version":"5.9.3"}

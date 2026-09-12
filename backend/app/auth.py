@@ -1,3 +1,5 @@
+"""用户认证模块：负责密码哈希、会话令牌签发和当前用户校验。"""
+
 import base64, hashlib, hmac, secrets
 from datetime import datetime, timedelta, timezone
 import jwt
@@ -9,12 +11,14 @@ from .schema import users
 
 
 def hash_password(password):
+    """使用随机盐和 scrypt 生成可持久化的密码摘要。"""
     salt = secrets.token_bytes(16)
     digest = hashlib.scrypt(password.encode(), salt=salt, n=16384, r=8, p=1)
     return base64.b64encode(salt + digest).decode()
 
 
 def verify_password(password, stored):
+    """以恒定时间比较用户输入和数据库中的密码摘要。"""
     try:
         raw = base64.b64decode(stored)
         return hmac.compare_digest(
@@ -26,6 +30,7 @@ def verify_password(password, stored):
 
 
 def token_for(user_id):
+    """签发十二小时有效的登录会话 JWT。"""
     return jwt.encode(
         {"sub": str(user_id), "exp": datetime.now(timezone.utc) + timedelta(hours=12)},
         settings().jwt_secret,
@@ -34,6 +39,7 @@ def token_for(user_id):
 
 
 def current_user(request: Request):
+    """解析会话 Cookie，并确认对应数据库用户仍处于启用状态。"""
     try:
         payload = jwt.decode(
             request.cookies.get("session", ""),

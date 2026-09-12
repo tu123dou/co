@@ -10,3 +10,4 @@ frontend/dist/
 .runtime/
 *.log
 .DS_Store
+**/.vite/

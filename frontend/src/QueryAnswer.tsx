@@ -25,6 +25,42 @@ import {
 } from "@ant-design/icons";
 import Chart from "./QueryChart";
 import { format, type Row, type Msg } from "./types";
+
+export function AnalysisSteps({ process }: { process: any[] }) {
+  return (
+    <div className="analysis-steps">
+      {process.map((step: any, index: number) => (
+        <div className="analysis-step" key={step.key}>
+          <div className="analysis-step-index">{index + 1}</div>
+          <div className="analysis-step-body">
+            <h4>
+              {step.title}
+              <span className={"analysis-step-status " + (step.status || "complete")}>
+                {step.status === "running" ? "进行中" : "已完成"}
+              </span>
+            </h4>
+            {(step.items || []).map((item: string, itemIndex: number) => (
+              <p key={itemIndex}>{item}</p>
+            ))}
+            {(step.executions || []).map((execution: any, sqlIndex: number) => (
+              <div className="analysis-sql" key={sqlIndex}>
+                <details className="analysis-sql-details">
+                  <summary>{execution.name}</summary>
+                  <pre>{execution.executable_sql}</pre>
+                </details>
+                <details className="analysis-sql-details">
+                  <summary>取数逻辑</summary>
+                  <pre>{execution.business_sql}</pre>
+                </details>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Answer({
   msg,
   onAsk,
@@ -66,6 +102,8 @@ export default function Answer({
     );
   const comparison = r.plan.comparison !== "none";
   const unit = r.metric.unit;
+  const process = r.analysis_process || [];
+  const responseTime = r.completed_at || msg.created_at;
   const pieAllowed =
     unit !== "%" &&
     !comparison &&
@@ -131,6 +169,18 @@ export default function Answer({
             <CheckCircleOutlined /> 已核对取数
           </span>
         </div>
+        {process.length > 0 && (
+          <Collapse
+            className="analysis-process"
+            items={[
+              {
+                key: "process",
+                label: "查看分析过程",
+                children: <AnalysisSteps process={process} />,
+              },
+            ]}
+          />
+        )}
         <p className="answer-text">{msg.content}</p>
         <div className="result-card">
           <div className="result-heading">
@@ -153,6 +203,8 @@ export default function Answer({
                             customer: "客户",
                             product_line: "产品线",
                             salesperson: "销售人员",
+                            contract: "合同",
+                            receivable_plan: "应收计划",
                             month: "月份",
                           })[d],
                       )
@@ -160,7 +212,7 @@ export default function Answer({
                   : ""}
               </h3>
             </div>
-            <Tag bordered={false}>模拟数据</Tag>
+            <Tag bordered={false}>经营数据</Tag>
           </div>
           <div className="result-kpis">
             <div>
@@ -265,80 +317,45 @@ export default function Answer({
                 · 展示 {r.rows.length} / {r.group_count} 组
               </span>
             )}
-            <span>{(r.duration_ms / 1000).toFixed(1)}s</span>
           </div>
         </div>
-        <Collapse
-          ghost
-          size="small"
-          items={[
-            {
-              key: "trace",
-              label: "查看指标口径与取数依据",
-              children: (
-                <div className="trace">
-                  <p>
-                    <b>指标口径：</b>
-                    {r.metric.definition}
-                  </p>
-                  <p>
-                    <b>数据版本：</b>
-                    {r.dataset_version} · 指标版本 v1
-                  </p>
-                  <p>
-                    <b>模型：</b>
-                    {r.model}
-                  </p>
-                  {r.comparison_range && (
-                    <p>
-                      <b>对比期间：</b>
-                      {r.comparison_range.start} — {r.comparison_range.end}
-                    </p>
-                  )}
-                  <p>
-                    <b>筛选条件：</b>
-                    {r.plan.filters.length
-                      ? r.plan.filters
-                          .map((f: any) => f.values.join("、"))
-                          .join("；")
-                      : "全部"}
-                  </p>
-                  {r.executions.map((e: any, i: number) => (
-                    <div key={i}>
-                      <b>{i ? "对比期 SQL" : "本期 SQL"}</b>
-                      <pre>{e.sql}</pre>
-                      <pre>{JSON.stringify(e.parameters, null, 2)}</pre>
-                    </div>
-                  ))}
-                </div>
-              ),
-            },
-          ]}
-        />
         <div className="answer-actions">
-          <Tooltip title="复制结论">
-            <Button
-              type="text"
-              size="small"
-              icon={<CopyOutlined />}
-              onClick={() =>
-                navigator.clipboard
-                  .writeText(msg.content)
-                  .then(() => message.success("已复制"))
-              }
-            />
-          </Tooltip>
-          <Button
-            type="text"
-            size="small"
-            icon={<FlagOutlined />}
-            onClick={() => onFeedback(msg.id)}
-          >
-            反馈
-          </Button>
+          <div>
+            <Tooltip title="复制结论">
+              <Button
+                type="text"
+                icon={<CopyOutlined />}
+                aria-label="复制结论"
+                onClick={() =>
+                  navigator.clipboard
+                    .writeText(msg.content)
+                    .then(() => message.success("已复制"))
+                }
+              />
+            </Tooltip>
+            <Tooltip title="反馈问题">
+              <Button
+                type="text"
+                icon={<FlagOutlined />}
+                aria-label="反馈问题"
+                onClick={() => onFeedback(msg.id)}
+              />
+            </Tooltip>
+          </div>
+          <span className="answer-meta">
+            耗时 {(r.duration_ms / 1000).toFixed(1)}s
+            {r.usage?.total_tokens != null && ` · Token ${r.usage.total_tokens}`}
+            {responseTime &&
+              ` · ${new Date(responseTime).toLocaleTimeString("zh-CN", {
+                hour12: false,
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}`}
+          </span>
         </div>
         <div className="followups">
-          {r.suggestions.map((q: string) => (
+          {(r.suggestions || []).map((q: string) => (
             <button key={q} onClick={() => onAsk(q)}>
               {q}
               <ArrowRightOutlined />

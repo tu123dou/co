@@ -1,4 +1,4 @@
-"""Run after migrations as schema owner; never grants access to application tables."""
+"""数据库授权脚本：迁移后仅向 analyst 账号授予 analytics 查询权限。"""
 
 import sys
 from pathlib import Path
@@ -10,6 +10,7 @@ from app.db import engine
 from app.config import settings
 
 role = make_url(settings().query_database_url).username
+# 角色名来自受信任配置，但仍按 PostgreSQL 标识符规则转义。
 quoted = '"' + role.replace('"', '""') + '"'
 with engine.begin() as conn:
     conn.execute(text("REVOKE ALL ON SCHEMA analytics FROM PUBLIC"))

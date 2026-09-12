@@ -1,8 +1,19 @@
+"""查询引擎测试：验证计划校验、SQL 编译、指标计算和安全边界。"""
+
 from datetime import date
+
 import pytest
+from app.query import (
+    compile_plan,
+    previous_dates,
+    render_business_sql,
+    render_executable_sql,
+    validate_sql,
+    value_of,
+)
+from app.schema import metadata
+from app.semantic import DIMENSIONS, METRICS, Filter, Plan
 from pydantic import ValidationError
-from app.semantic import Plan, Filter, METRICS, DIMENSIONS
-from app.query import compile_plan, previous_dates, validate_sql, value_of
 
 
 def plan(**kwargs):
@@ -18,10 +29,11 @@ def plan(**kwargs):
 
 @pytest.mark.parametrize("metric", list(METRICS))
 def test_compiles_all_metrics(metric):
+    dimension = "region" if metric in {"payments", "outstanding_receivables", "overdue_receivables"} else "product_line"
     sql, params = compile_plan(
         plan(
             metric=metric,
-            dimensions=["product_line"] if metric != "payments" else ["region"],
+            dimensions=[dimension],
         )
     )
     assert "analytics." in sql and params["start_date"] == date(2026, 1, 1)
@@ -29,7 +41,32 @@ def test_compiles_all_metrics(metric):
 
 @pytest.mark.parametrize("dim", list(DIMENSIONS))
 def test_compiles_all_dimensions(dim):
-    compile_plan(plan(dimensions=[dim]))
+    metric = "overdue_receivables" if dim == "receivable_plan" else "revenue"
+    compile_plan(plan(metric=metric, dimensions=[dim]))
+
+
+@pytest.mark.parametrize("dim", list(DIMENSIONS))
+def test_compiles_all_filter_dimensions(dim):
+    metric = "overdue_receivables" if dim == "receivable_plan" else "revenue"
+    compile_plan(plan(metric=metric, filters=[Filter(dimension=dim, values=["测试值"])]))
+
+
+def test_payment_total_only_joins_contract_for_status():
+    sql, _ = compile_plan(plan(metric="payments"))
+    assert "analytics.payment_entries" in sql
+    assert "analytics.contracts" in sql
+    assert "analytics.org_units" not in sql
+    assert "analytics.customers" not in sql
+    assert "analytics.industries" not in sql
+    assert "analytics.salespeople" not in sql
+
+
+def test_payment_dimension_adds_only_required_join():
+    sql, _ = compile_plan(plan(metric="payments", dimensions=["industry"]))
+    assert "analytics.customers" in sql
+    assert "analytics.industries" in sql
+    assert "analytics.org_units" not in sql
+    assert "analytics.salespeople" not in sql
 
 
 @pytest.mark.parametrize(
@@ -56,6 +93,57 @@ def test_filters_are_parameters():
         plan(filters=[Filter(dimension="region", values=[value])])
     )
     assert value not in sql and params["f0_0"] == value
+
+
+def test_display_sql_is_copyable_and_business_readable():
+    current = plan(
+        metric="signed",
+        dimensions=["product_line"],
+        filters=[Filter(dimension="product_line", values=["通用计算"])],
+    )
+    sql, params = compile_plan(current)
+    executable = render_executable_sql(sql, params)
+    assert ":start_date" not in executable
+    assert "CAST('2026-01-01' AS DATE)" in executable
+    assert "'通用计算'" in executable
+    validate_sql(executable)
+    readable = render_business_sql(current)
+    assert "SELECT 产品线" in readable
+    assert "合同明细 JOIN 合同台账" in readable
+    assert "AS 签约额" in readable
+
+
+def test_customer_contract_list_uses_controlled_grouping():
+    sql, params = compile_plan(
+        plan(
+            metric="signed",
+            dimensions=["contract"],
+            filters=[Filter(dimension="customer", values=["明瀚教育科研集团0034"])],
+            chart="table",
+        )
+    )
+    assert "ct.number" in sql and "ct.name" in sql
+    assert params["f0_0"] == "明瀚教育科研集团0034"
+
+
+def test_highest_customer_receivable_plan_uses_controlled_grouping():
+    sql, params = compile_plan(
+        plan(
+            metric="overdue_receivables",
+            dimensions=["receivable_plan"],
+            filters=[Filter(dimension="customer", values=["明瀚教育科研集团0034"])],
+            sort="desc",
+            limit=1,
+            chart="table",
+        )
+    )
+    assert "f.due_date" in sql and "CAST(f.id AS TEXT)" in sql
+    assert params["f0_0"] == "明瀚教育科研集团0034"
+
+
+def test_receivable_plan_dimension_rejects_unrelated_metric():
+    with pytest.raises(ValidationError):
+        plan(metric="revenue", dimensions=["receivable_plan"])
 
 
 @pytest.mark.parametrize(
@@ -91,3 +179,15 @@ def test_ratio_and_zero():
     assert value_of({"revenue": 100, "cost": 40}, "gross_margin") == 60
     assert value_of({"revenue": 0}, "gross_margin") is None
     assert value_of({"revenue": 90, "target": 100}, "attainment") == 90
+
+
+def test_every_domain_table_and_column_has_chinese_catalog_comment():
+    assert len(metadata.tables) == 27
+    for table in metadata.tables.values():
+        assert table.comment
+        assert "用途：" in table.comment
+        assert "粒度：" in table.comment
+        assert any("\u4e00" <= char <= "\u9fff" for char in table.comment)
+        for column in table.c:
+            assert column.comment, f"{table.fullname}.{column.name} 缺少中文列注释"
+            assert any("\u4e00" <= char <= "\u9fff" for char in column.comment)

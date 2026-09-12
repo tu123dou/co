@@ -1,7 +1,8 @@
 name: jingguan
 services:
+  # PostgreSQL 业务数据库，镜像已内置 pgvector 扩展。
   db:
-    image: postgres:18.1
+    image: pgvector/pgvector:0.8.6-pg18-trixie
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: jingguan
@@ -9,14 +10,19 @@ services:
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Missing APP_DB_PASSWORD}
       QUERY_DB_PASSWORD: ${QUERY_DB_PASSWORD:?Missing QUERY_DB_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql
+      # 命名卷持久化数据；初始化脚本只在空数据目录首次创建时执行。
+      - postgres_data_v2:/var/lib/postgresql
       - ./scripts/docker-init.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
+    ports:
+      # 只监听本机，DBeaver 可通过 127.0.0.1:54330 连接。
+      - "127.0.0.1:54330:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d jingguan"]
       interval: 5s
       timeout: 3s
       retries: 20
     restart: unless-stopped
+  # FastAPI 后端同时使用 app 读写账号和 analyst 只读问数账号。
   backend:
     build:
       context: .
@@ -41,6 +47,7 @@ services:
       retries: 15
       start_period: 30s
     restart: unless-stopped
+  # React 构建产物由 Web 服务器提供，并把 API 请求转发给 backend。
   frontend:
     build:
       context: .
@@ -52,4 +59,5 @@ services:
         condition: service_healthy
     restart: unless-stopped
 volumes:
-  postgres_data:
+  # 删除容器不会丢失该卷；只有显式删除卷才会清空数据库。
+  postgres_data_v2:

@@ -10,37 +10,32 @@ React + Python + PostgreSQL 的本地经营分析工作台。真实调用百炼 
 - 密码：项目根目录 `.env` 的 `ADMIN_PASSWORD`。
 - API Key 已保存在本地 `.env`；修改后重启后端。不要提交或公开该文件。
 
-## 本地启动（无需 Docker）
+## 本地启动（OrbStack）
 
-需要 Node.js 24、Python 3.13/3.14。首次安装依赖及模型调用需要联网。
-
-```sh
-bash scripts/dev.sh
-```
-
-脚本安装锁定依赖、创建项目专用 PostgreSQL、运行迁移、初始化模拟数据，再启动前后端。首次安装可能耗时几分钟。按 Ctrl+C 停止本次脚本启动的服务，数据库文件会保留。
-
-- PostgreSQL 数据：`.runtime/postgres`，端口 `54329`，仅监听 `127.0.0.1`。
-- 后端：`8000`，前端：`5178`。请先停止本项目已运行的实例，避免端口冲突。
-- 不注册系统服务、不使用全局 PostgreSQL；本地辅助程序使用 embedded-postgres 包启动真正的 PostgreSQL 18.1。
-- 初始化脚本发现数据版本存在时直接退出，绝不覆盖已有业务数据。
-- `.env` 中的初始管理员密码仅用于首次创建账号，之后修改环境变量不会自动重置已有密码。
-
-也可独立启动前端 `cd frontend && npm run dev`，或后端 `PYTHONPATH=backend .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000`。独立启动前请确保数据库、迁移和种子数据已就绪。
-
-## Docker Compose 部署
-
-为后续迁移准备了 PostgreSQL、Python API、Nginx 静态前端三个服务。本机未安装 Docker，因此当前验收走上面的原生本地运行方式，容器构建尚未实际验证。
+推荐使用 OrbStack 运行正式的本地开发栈，数据库镜像为 `pgvector/pgvector:0.8.6-pg18-trixie`。
 
 ```sh
-python3 scripts/setup-env.py  # 仅在 .env 不存在时生成，保留既有文件
-# 在 .env 中填写 LLM_API_KEY
+python3 scripts/setup-env.py
 docker compose up --build -d
 ```
 
-访问相同的 `http://127.0.0.1:5178`。原生服务与容器前端不能同时占用该端口。Compose 使用独立命名卷，不自动复制 `.runtime/postgres` 的数据；首次启动会生成相同的业务台账，但会话数据是独立的。需要迁移会话时使用 PostgreSQL 的 pg_dump/pg_restore 并保留账号密钥配置。
+访问 `http://127.0.0.1:5178`。PostgreSQL 仅映射到本机 `127.0.0.1:54330`，数据保存在 Compose 命名卷中。后端启动时运行 Alembic、初始化模拟数据，并用百炼 `qwen3.7-text-embedding-flash` 同步 1024 维业务语义目录。
 
-`.env.example` 中 `${...}` 是生成占位符，请使用脚本而非直接复制后启动。不要运行 `docker compose down -v`，除非确实要删除整个容器数据库。
+- 初始化脚本发现数据版本存在时直接退出，绝不覆盖已有业务数据。
+- `.env` 中的初始登录密码仅用于首次创建账号，之后修改环境变量不会自动重置已有密码。
+- 不要运行 `docker compose down -v`，除非确实要删除整个容器数据库。
+
+原 embedded-postgres 数据迁移时，先保持旧库运行并执行：
+
+```sh
+PYTHONPATH=backend .venv/bin/python scripts/transfer-data.py export .runtime/pre-orbstack-backup.jsonl.gz
+# 启动并迁移容器数据库后：
+PYTHONPATH=backend .venv/bin/python scripts/transfer-data.py import .runtime/pre-orbstack-backup.jsonl.gz
+```
+
+备份和导入都会核对逐表记录数；目标库存在业务数据时导入会拒绝覆盖。旧 embedded-postgres 数据目录仅作为迁移来源保留，正常开发以 OrbStack 为准。
+
+`.env.example` 中 `${...}` 是生成占位符，请使用脚本而非直接复制后启动。
 
 云端公开部署前需配置域名、HTTPS、`COOKIE_SECURE=true`、正确的 `ALLOWED_ORIGIN`，并配置备份和入口限流；当前配置只对本机开放。
 
@@ -56,13 +51,13 @@ docker compose up --build -d
 
 每次问数由模型解释为受约束的结构化计划，程序校验后编译 SQL。金额及同比计算来自数据库和 Decimal 运算；中文结论使用可核对的确定性模板生成，避免模型补写数字。图表来自同一结果集。推荐追问来自业务规则。
 
-未实现：任意 SQL 编辑、跨数据源接入、文件上传、预测、自由因果归因、金额区间筛选、订单数量、应收账龄、产品线回款分摊、完整组织权限及反馈管理后台。未知能力会明确提示，不静默替换查询。当前角色仅 admin/user，用户共享模拟业务数据，个人会话等应用数据相互隔离。
+未实现：任意 SQL 编辑、跨数据源接入、文件上传、自由因果归因、金额区间筛选、订单数量、任意逐笔财务流水、商机/PPL、项目风险、产品线回款分摊和反馈管理后台。已支持受控的客户合同清单、单笔应收计划排行、经营预测和应收分析。未知能力会明确提示，不静默替换查询。用户共享业务数据，个人会话、收藏和工作台设置等应用数据相互隔离。
 
 ## 数据与口径
 
-12 张业务表、8 张应用表，分 `analytics` 与 `app` 两个 schema；Alembic 另有迁移版本表。业务数据覆盖 2024-01-01 至 2026-08-31，种子 `20260911`。
+13 张业务表、14 张应用表，分 `analytics` 与 `app` 两个 schema；Alembic 另有迁移版本表。业务域包含合同、产品、收入、成本、回款、应收和经营预测；应用域增加用户独立的工作台设置与常见问题统计。业务数据覆盖 2024-01-01 至 2026-08-31，种子 `20260912`。
 
-实际生成：5,479 份合同、8,473 条合同明细、20,120 条收入确认、20,120 条成本、9,991 条回款、1,600 条月度目标，另有 1,000 家客户及组织/产品等维度数据。
+实际生成：1,756 份合同、2,719 条合同明细、6,179 条收入确认、6,179 条成本、3,184 条回款、3,420 条应收计划和1,600条月度目标，另有1,000家客户及组织/产品等维度数据。
 
 - 金额全部是不含税管理金额；回款为管理折算金额，不用于财务报税。
 - 收入分期确认，成本与确认期匹配；回款有预付款及正常/延期尾款。
@@ -72,7 +67,7 @@ docker compose up --build -d
 - 毛利率使用总收入和总成本计算，不平均分组百分比。目标和收入分别聚合，避免目标重复累计。
 - 达成率只支持完整月份，且不支持未分配目标的客户、行业或销售人员维度。
 - 回款在合同粒度，不支持产品线维度。一次最多返回 500 个分组；展示前 1–100 组，汇总仍包含全部符合条件数据。
-- 模拟数据包含 2026 年华东数据智能平台收入增长、成本占比上升的预设情景；这只是模拟机制，不是对真实企业的判断。
+- 模拟数据按通用计算、智能计算、数据存储、商业解决方案及交付维保生成，并包含项目交付和应收风险；这只是演示机制，不是对真实企业的判断。
 
 ## 开发与验证
 
@@ -97,10 +92,11 @@ cd frontend && npm run build
 - `backend/app/semantic.py`：版本化指标字典、查询计划 Schema。
 - `backend/app/query.py`：只读 SQL 编译、校验及数值计算。
 - `backend/app/llm.py`：百炼兼容接口、模型结果校验及有限重试。
+- `backend/app/retrieval.py`：业务目录生成、向量同步、精确词面匹配与 pgvector 召回。
 - `backend/app/main.py`：认证、会话、流式问数与辅助 API。
-- `backend/app/schema.py`：20 张表结构；`alembic/`：冻结迁移。
+- `backend/app/schema.py`：27 张领域表结构；`alembic/`：冻结迁移。
 - `backend/app/seed.py`：可重复、不可覆盖的模拟数据生成器。
 - `frontend/src/Workbench.tsx`：问数工作台与结果展示。
 - `docs/architecture.md`：执行边界与后续扩展。
 
-模型仅接收业务目录、用户问题和近期上下文，不获得数据库账号或 API Key。问数账号只可读 analytics schema。没有引入 pgvector 或 LlamaIndex；后续可以通过检索接口补充业务目录，无需更换查询执行链路。
+模型仅接收召回的业务目录、合法实体值、用户问题和近期上下文，不获得数据库账号或 API Key。pgvector 只选择相关指标、维度、表字段、实体和示例；模型仍只生成受 Pydantic 约束的计划，SQL 由程序编译并经 SQLGlot 校验。第一版直接使用 SQLAlchemy + pgvector，不引入 LlamaIndex。

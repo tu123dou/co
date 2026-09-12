@@ -1,13 +1,14 @@
-"""Read-only integration checks against the seeded, project-local database."""
+"""数据库集成测试：验证迁移、只读权限、表结构和业务数据口径。"""
 
 import os
-import pytest
 from datetime import date
-from sqlalchemy import text
-from sqlalchemy.exc import DBAPIError
+
+import pytest
 from app.db import engine, query_engine
 from app.query import execute_plan
 from app.semantic import Plan
+from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 
 pytestmark = pytest.mark.skipif(
     os.getenv("TEST_DATABASE") != "1",
@@ -36,13 +37,64 @@ def scalar(sql):
         return conn.scalar(text(sql))
 
 
-def test_exact_twenty_tables():
+def test_exact_twenty_seven_tables():
     assert (
         scalar(
             "SELECT count(*) FROM information_schema.tables WHERE table_schema IN ('app','analytics') AND table_type='BASE TABLE'"
         )
-        == 20
+        == 27
     )
+
+
+def test_database_comments_are_complete_and_include_grain():
+    with engine.connect() as conn:
+        tables = (
+            conn.execute(
+                text(
+                    """
+                SELECT n.nspname AS schema_name, c.relname AS table_name,
+                       obj_description(c.oid, 'pg_class') AS comment
+                FROM pg_class c
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname IN ('app', 'analytics') AND c.relkind = 'r'
+                """
+                )
+            )
+            .mappings()
+            .all()
+        )
+        assert len(tables) == 27
+        assert all(
+            row["comment"] and "用途：" in row["comment"] and "粒度：" in row["comment"]
+            for row in tables
+        )
+        undocumented = conn.scalar(
+            text(
+                """
+                SELECT count(*)
+                FROM pg_attribute a
+                JOIN pg_class c ON c.oid = a.attrelid
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname IN ('app', 'analytics')
+                  AND c.relkind = 'r' AND a.attnum > 0 AND NOT a.attisdropped
+                  AND col_description(c.oid, a.attnum) IS NULL
+                """
+            )
+        )
+        assert undocumented == 0
+        alembic = (
+            conn.execute(
+                text(
+                    """
+                SELECT obj_description('public.alembic_version'::regclass, 'pg_class') AS table_comment,
+                       col_description('public.alembic_version'::regclass, 1) AS column_comment
+                """
+                )
+            )
+            .mappings()
+            .one()
+        )
+        assert alembic["table_comment"] and alembic["column_comment"]
 
 
 @pytest.mark.parametrize(
@@ -114,6 +166,17 @@ def test_no_overpayment():
     )
 
 
+def test_receivables_reconcile_to_payments_and_include_overdue():
+    assert scalar("SELECT SUM(settled_amount_ex_tax) FROM analytics.receivable_entries") == scalar("SELECT SUM(amount_ex_tax) FROM analytics.payment_entries")
+    assert scalar("SELECT count(*) FROM analytics.receivable_entries WHERE status='逾期' AND settled_amount_ex_tax<amount_ex_tax") > 0
+
+
+@pytest.mark.parametrize("metric", ["floor", "forecast", "outstanding_receivables", "overdue_receivables"])
+def test_computing_business_metrics_return_data(metric):
+    result = run(metric=metric)
+    assert result["total"] > 0
+
+
 @pytest.mark.parametrize(
     "sql",
     [
@@ -123,9 +186,8 @@ def test_no_overpayment():
     ],
 )
 def test_analyst_denied(sql):
-    with query_engine.begin() as conn:
-        with pytest.raises(DBAPIError):
-            conn.execute(text(sql))
+    with query_engine.begin() as conn, pytest.raises(DBAPIError):
+        conn.execute(text(sql))
 
 
 def test_empty_and_zero_baseline():

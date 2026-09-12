@@ -1,3 +1,4 @@
+-- 第一版数据库结构快照：创建 app 与 analytics 模式及其基础表和约束。
 CREATE SCHEMA IF NOT EXISTS analytics;
 
 CREATE SCHEMA IF NOT EXISTS app;

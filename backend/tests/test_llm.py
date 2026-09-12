@@ -1,3 +1,5 @@
+"""模型适配测试：验证调用重试、错误归一化和结构化计划解析。"""
+
 import asyncio
 import pytest
 from app import llm
@@ -41,3 +43,15 @@ def test_cancellation_not_retried(monkeypatch):
     monkeypatch.setattr(llm, "_call_once", once)
     with pytest.raises(asyncio.CancelledError):
         asyncio.run(llm.call_model([]))
+
+
+def test_selected_model_is_forwarded(monkeypatch):
+    received = []
+
+    async def once(*args, **kwargs):
+        received.append(kwargs["model"])
+        return "ok", {}
+
+    monkeypatch.setattr(llm, "_call_once", once)
+    assert asyncio.run(llm.call_model([], model="glm-5.2"))[0] == "ok"
+    assert received == ["glm-5.2"]

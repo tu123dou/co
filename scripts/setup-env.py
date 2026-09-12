@@ -1,4 +1,4 @@
-"""Create local config without overwriting existing user credentials."""
+"""本地配置脚本：首次创建 .env，并保护用户已经填写的配置和密钥。"""
 
 from pathlib import Path
 import secrets

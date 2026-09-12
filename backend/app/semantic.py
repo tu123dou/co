@@ -1,10 +1,17 @@
-"""Versioned business catalog and constrained query contract; no model-authored SQL."""
+"""问数系统的业务语义契约。
+
+METRICS 定义“算什么”，DIMENSIONS 定义“按什么查看”。大模型只能输出这里声明的
+Plan，不能自行增加表名或字段名。Pydantic 会检查日期、筛选、指标与维度组合，
+通过后才交给 query.py 编译 SQL。
+"""
 
 from datetime import date
 from typing import Literal
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 METRICS = {
+    # facts 表示计算指标所需的基础事实。普通指标通常只有一个事实，毛利等派生指标
+    # 会先分别查询多个事实，再在 query.py 中按统一维度计算。
     "revenue": {
         "name": "确认收入",
         "unit": "元",
@@ -47,7 +54,12 @@ METRICS = {
         "definition": "完整月份的确认收入÷同期收入目标×100；仅支持区域、经营单元、城市、产品线、月份。",
         "facts": ["revenue", "target"],
     },
+    "floor": {"name": "保底收入", "unit": "元", "definition": "按月度经营预测汇总保底收入金额。", "facts": ["floor"]},
+    "forecast": {"name": "滚动预测收入", "unit": "元", "definition": "按月度经营预测汇总最新滚动预测收入。", "facts": ["forecast"]},
+    "outstanding_receivables": {"name": "未回款金额", "unit": "元", "definition": "应收计划金额减已核销金额。", "facts": ["outstanding_receivables"]},
+    "overdue_receivables": {"name": "逾期应收", "unit": "元", "definition": "到期且尚未结清的应收余额。", "facts": ["overdue_receivables"]},
 }
+# 模型只能选择这些逻辑维度；物理字段映射由 query.py 统一控制。
 DIMENSIONS = {
     "region": "区域",
     "city": "城市",
@@ -56,6 +68,8 @@ DIMENSIONS = {
     "customer": "客户",
     "product_line": "产品线",
     "salesperson": "销售人员",
+    "contract": "合同",
+    "receivable_plan": "应收计划",
     "month": "月份",
 }
 Metric = Literal[
@@ -66,6 +80,7 @@ Metric = Literal[
     "gross_profit",
     "gross_margin",
     "attainment",
+    "floor", "forecast", "outstanding_receivables", "overdue_receivables",
 ]
 Dimension = Literal[
     "region",
@@ -75,6 +90,8 @@ Dimension = Literal[
     "customer",
     "product_line",
     "salesperson",
+    "contract",
+    "receivable_plan",
     "month",
 ]
 
@@ -86,6 +103,7 @@ class Filter(BaseModel):
 
 
 class Plan(BaseModel):
+    """自然语言与 SQL 之间经过严格校验的中间查询计划。"""
     model_config = ConfigDict(extra="forbid")
     metric: Metric
     dimensions: list[Dimension] = Field(default_factory=list, max_length=2)
@@ -99,6 +117,7 @@ class Plan(BaseModel):
 
     @model_validator(mode="after")
     def consistent(self):
+        # 在生成 SQL 前拦截指标和维度粒度不兼容的组合。
         if self.end_date < self.start_date:
             raise ValueError("结束日期不能早于开始日期")
         if (self.end_date - self.start_date).days > 1096:
@@ -121,6 +140,14 @@ class Plan(BaseModel):
                 != calendar.monthrange(self.end_date.year, self.end_date.month)[1]
             ):
                 raise ValueError("目标达成率仅支持完整月份，请选择完整月或季度")
+        if "contract" in dims and self.metric in {"attainment", "floor", "forecast"}:
+            raise ValueError("合同维度仅适用于合同、收入、成本、回款和应收指标")
+        if "receivable_plan" in dims and self.metric not in {"outstanding_receivables", "overdue_receivables"}:
+            raise ValueError("应收计划维度仅适用于未回款和逾期应收指标")
+        if self.metric in {"floor", "forecast"} and dims - {"region", "city", "org_unit", "product_line", "month"}:
+            raise ValueError("保底和预测仅支持组织、产品线和月份维度")
+        if self.metric in {"outstanding_receivables", "overdue_receivables"} and "product_line" in dims:
+            raise ValueError("应收指标不支持产品线维度")
         return self
 
 

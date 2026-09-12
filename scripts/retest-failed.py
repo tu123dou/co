@@ -1,3 +1,5 @@
+"""失败用例复测脚本：只重新运行上次模型评测中未通过的案例。"""
+
 import asyncio, json, sys
 from pathlib import Path
 

@@ -1,3 +1,5 @@
+"""数据库就绪检查：开发环境启动时最多等待 PostgreSQL 三十秒。"""
+
 import time
 from sqlalchemy import text
 from app.db import engine
