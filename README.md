@@ -2,6 +2,28 @@
 
 React + Python + PostgreSQL 的本地经营分析工作台。真实调用百炼 qwen3.8-max，业务数据为固定种子生成的虚构企业软件与服务台账。没有规则模拟模型或写死问数答案。
 
+## 云服务器部署（暂未配置域名）
+
+前端镜像已经内置 Nginx，并会把 `/api` 转发到后端，因此无需在宿主机重复安装 Nginx。以公网 IP `8.137.78.125` 直接提供 HTTP 服务时，在服务器 `.env` 中设置：
+
+```dotenv
+COOKIE_SECURE=false
+ALLOWED_ORIGIN=http://8.137.78.125
+APP_BIND_ADDRESS=0.0.0.0
+APP_PORT=80
+```
+
+然后启动并检查服务：
+
+```bash
+cd /opt/ai-wenshu/co
+docker compose up -d --build
+docker compose ps
+curl http://127.0.0.1/api/health
+```
+
+阿里云安全组只需放行公网 TCP 80；PostgreSQL 仍只监听服务器本机的 `127.0.0.1:54330`。以后配置域名和 HTTPS 时，将 `ALLOWED_ORIGIN` 改成实际 HTTPS 域名并设置 `COOKIE_SECURE=true`。
+
 ## 当前机器访问
 
 - 网站：http://127.0.0.1:5178/
