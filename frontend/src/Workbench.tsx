@@ -313,22 +313,16 @@ export default function Workbench({
       return;
     }
     if (key === "delete") {
-      Modal.confirm({
-        title: "删除这个会话？",
-        content: "会话、回答和相关反馈将一起删除。",
-        okText: "删除",
-        cancelText: "取消",
-        okButtonProps: { danger: true },
-        onOk: async () => {
-          await api("/conversations/" + c.id, { method: "DELETE" });
+      api("/conversations/" + c.id, { method: "DELETE" })
+        .then(async () => {
           if (cid === c.id) {
             setCid(null);
             setMsgs([]);
           }
           await refresh();
           message.success("会话已删除");
-        },
-      });
+        })
+        .catch((e) => message.error(e.message));
     }
   };
   const actions = (c: any) => [
@@ -431,7 +425,7 @@ export default function Workbench({
                     <Dropdown
                       menu={{
                         items: actions(c),
-                        onClick: ({ key }) => handleConversationAction(c, key),
+                        onClick: (info) => handleConversationAction(c, info.key),
                       }}
                       trigger={["click"]}
                       disabled={busy}
@@ -441,6 +435,7 @@ export default function Workbench({
                         type="text"
                         icon={<MoreOutlined />}
                         aria-label={"管理会话 " + c.title}
+                        onClick={(event) => event.stopPropagation()}
                       />
                     </Dropdown>
                   </div>
