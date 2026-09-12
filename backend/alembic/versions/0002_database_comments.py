@@ -13,20 +13,19 @@ down_revision = "0001"
 branch_labels = None
 depends_on = None
 
-# Freeze this revision to the tables that existed at revision 0002. Later
-# catalog additions must be commented by their own migration.
+# 迁移文件必须只处理当时已经存在的表。业务目录会持续增加新表，若在这里
+# 直接遍历最新目录，全新部署会在后续迁移创建表之前执行 COMMENT 而失败。
+INITIAL_TABLES = {
+    "analytics.industries", "analytics.org_units", "analytics.product_lines",
+    "analytics.customers", "analytics.monthly_targets", "analytics.products",
+    "analytics.salespeople", "analytics.contracts", "analytics.contract_items",
+    "analytics.payment_entries", "analytics.cost_entries", "analytics.revenue_entries",
+    "app.dataset_versions", "app.metric_definitions", "app.users",
+    "app.conversations", "app.favorite_questions", "app.messages",
+    "app.feedbacks", "app.query_runs",
+}
 CATALOG = {
-    name: spec
-    for name, spec in TABLE_CATALOG.items()
-    if name
-    not in {
-        "app.semantic_documents",
-        "app.semantic_chunks",
-        "app.embedding_jobs",
-        "app.retrieval_events",
-        "analytics.opportunities",
-        "analytics.receivable_entries",
-    }
+    name: spec for name, spec in TABLE_CATALOG.items() if name in INITIAL_TABLES
 }
 LATER_COLUMNS = {
     "analytics.org_units": {"code", "unit_type"}, "analytics.industries": {"code"},
@@ -35,6 +34,7 @@ LATER_COLUMNS = {
     "analytics.contracts": {"name", "opportunity_id", "end_customer_id"},
     "analytics.contract_items": {"quantity", "unit_name", "tax_rate", "amount_with_tax"},
     "analytics.monthly_targets": {"floor_amount", "forecast_amount"},
+    "app.feedbacks": {"resolution_note", "updated_at"},
 }
 
 
