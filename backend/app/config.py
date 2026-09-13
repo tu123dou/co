@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     embedding_api_key: str = ""
     embedding_dimensions: int = 1024
     retrieval_top_k: int = 12
+    # 语音接口与主模型共用百炼 API Key；如使用业务空间专属域名可单独覆盖。
+    audio_base_url: str = "https://dashscope.aliyuncs.com/api/v1"
+    audio_api_key: str = ""
+    asr_model: str = "qwen-audio-3.0-asr-flash"
+    tts_model: str = "qwen-audio-3.0-tts-flash"
+    tts_voice: str = "longanhuan_v3.6"
+    audio_timeout: int = 90
     query_timeout_ms: int = 10000
     cookie_secure: bool = False
     # 多个来源使用英文逗号分隔；保留本地正式页面和前端开发页面。

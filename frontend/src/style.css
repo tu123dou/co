@@ -1039,6 +1039,15 @@ textarea {
   color: #4779d8 !important;
   background: #f0f5fd !important;
 }
+.voice-input.recording {
+  color: #fff !important;
+  border-color: #ef5350 !important;
+  background: #ef5350 !important;
+  animation: voice-pulse 1.2s ease-in-out infinite;
+}
+@keyframes voice-pulse {
+  50% { box-shadow: 0 0 0 5px rgba(239, 83, 80, 0.16); }
+}
 .answer-meta {
   color: #a0abba;
   font-size: 11px;

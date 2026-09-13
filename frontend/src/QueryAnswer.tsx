@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Button,
@@ -22,6 +22,9 @@ import {
   PieChartOutlined,
   TableOutlined,
   SafetyCertificateOutlined,
+  SoundOutlined,
+  PauseCircleOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import Chart from "./QueryChart";
 import { format, type Row, type Msg } from "./types";
@@ -72,6 +75,57 @@ export default function Answer({
 }) {
   const r = msg.result;
   const [tab, setTab] = useState(r?.plan?.chart || "bar");
+  const [speechLoading, setSpeechLoading] = useState(false);
+  const [speechPlaying, setSpeechPlaying] = useState(false);
+  const speech = useRef<HTMLAudioElement | null>(null);
+  const speechUrl = useRef<string | null>(null);
+  useEffect(
+    () => () => {
+      speech.current?.pause();
+      if (speechUrl.current) URL.revokeObjectURL(speechUrl.current);
+    },
+    [],
+  );
+
+  async function toggleSpeech() {
+    if (speech.current && speechPlaying) {
+      speech.current.pause();
+      setSpeechPlaying(false);
+      return;
+    }
+    if (speech.current) {
+      await speech.current.play();
+      setSpeechPlaying(true);
+      return;
+    }
+    setSpeechLoading(true);
+    try {
+      const response = await fetch("/api/audio/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: msg.content.slice(0, 3000) }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.detail || "语音合成失败");
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const audio = new Audio(url);
+      speechUrl.current = url;
+      speech.current = audio;
+      audio.onended = () => setSpeechPlaying(false);
+      audio.onerror = () => {
+        setSpeechPlaying(false);
+        message.error("语音播放失败");
+      };
+      await audio.play();
+      setSpeechPlaying(true);
+    } catch (error) {
+      message.error((error as Error).message);
+    } finally {
+      setSpeechLoading(false);
+    }
+  }
   const ok = r?.status === "success";
   if (!ok)
     return (
@@ -88,6 +142,16 @@ export default function Answer({
             message={msg.content}
             showIcon
           />
+          {r?.status !== "error" && (
+            <Button
+              size="small"
+              icon={speechLoading ? <LoadingOutlined spin /> : speechPlaying ? <PauseCircleOutlined /> : <SoundOutlined />}
+              disabled={speechLoading}
+              onClick={toggleSpeech}
+            >
+              {speechPlaying ? "暂停播放" : "播放回答"}
+            </Button>
+          )}
           {r?.status === "error" && (
             <Button
               size="small"
@@ -357,6 +421,15 @@ export default function Answer({
                 icon={<FlagOutlined />}
                 aria-label="反馈问题"
                 onClick={() => onFeedback(msg.id)}
+              />
+            </Tooltip>
+            <Tooltip title={speechPlaying ? "暂停播放" : "播放回答"}>
+              <Button
+                type="text"
+                icon={speechLoading ? <LoadingOutlined spin /> : speechPlaying ? <PauseCircleOutlined /> : <SoundOutlined />}
+                aria-label={speechPlaying ? "暂停播放" : "播放回答"}
+                disabled={speechLoading}
+                onClick={toggleSpeech}
               />
             </Tooltip>
           </div>

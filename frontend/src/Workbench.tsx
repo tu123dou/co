@@ -39,6 +39,8 @@ import {
   ReloadOutlined,
   ControlOutlined,
   ExclamationCircleOutlined,
+  AudioOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import { api, post } from "./api";
 
@@ -117,10 +119,15 @@ export default function Workbench({
     [rename, setRename] = useState<any>(null),
     [renameText, setRenameText] = useState(""),
     [testing, setTesting] = useState(false),
-    [loadingChat, setLoadingChat] = useState(false);
+    [loadingChat, setLoadingChat] = useState(false),
+    [recording, setRecording] = useState(false),
+    [transcribing, setTranscribing] = useState(false);
   const abort = useRef<AbortController | null>(null),
     end = useRef<HTMLDivElement>(null),
-    sending = useRef(false);
+    sending = useRef(false),
+    recorder = useRef<MediaRecorder | null>(null),
+    recordingStream = useRef<MediaStream | null>(null),
+    recordingChunks = useRef<Blob[]>([]);
   const refresh = () => api("/conversations").then(setConversations);
   const refreshCommonQuestions = () =>
     api("/common-questions").then(setCommonQuestions);
@@ -145,6 +152,71 @@ export default function Workbench({
     );
     return () => window.clearInterval(timer);
   }, [busy, stage]);
+  useEffect(
+    () => () => {
+      recorder.current?.stop();
+      recordingStream.current?.getTracks().forEach((track) => track.stop());
+    },
+    [],
+  );
+
+  async function toggleRecording() {
+    if (recording) {
+      recorder.current?.stop();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      message.warning("当前页面无法使用麦克风，请通过 HTTPS 或 localhost 访问");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const preferredTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+      const mimeType = preferredTypes.find((type) => MediaRecorder.isTypeSupported(type));
+      const nextRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      recorder.current = nextRecorder;
+      recordingStream.current = stream;
+      recordingChunks.current = [];
+      nextRecorder.ondataavailable = (event) => {
+        if (event.data.size) recordingChunks.current.push(event.data);
+      };
+      nextRecorder.onerror = () => message.error("录音失败，请检查麦克风权限");
+      nextRecorder.onstop = async () => {
+        setRecording(false);
+        stream.getTracks().forEach((track) => track.stop());
+        recordingStream.current = null;
+        const blob = new Blob(recordingChunks.current, {
+          type: nextRecorder.mimeType || "audio/webm",
+        });
+        if (!blob.size) return;
+        setTranscribing(true);
+        try {
+          const response = await fetch("/api/audio/transcribe", {
+            method: "POST",
+            headers: { "Content-Type": blob.type },
+            body: blob,
+          });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.detail || "语音识别失败");
+          }
+          const data = await response.json();
+          setInput((current) => (current.trim() ? `${current.trim()} ${data.text}` : data.text));
+          message.success("语音已转换为文字");
+        } catch (error) {
+          message.error((error as Error).message);
+        } finally {
+          setTranscribing(false);
+          recorder.current = null;
+          recordingChunks.current = [];
+        }
+      };
+      nextRecorder.start();
+      setRecording(true);
+    } catch (error) {
+      message.error((error as DOMException).name === "NotAllowedError" ? "请允许浏览器使用麦克风" : "无法启动录音");
+    }
+  }
   async function loadConversation(id: string) {
     if (sending.current) return;
     setPage("ask");
@@ -749,6 +821,16 @@ export default function Workbench({
                 <span className="enter-hint">
                   Enter 发送 · Shift + Enter 换行
                 </span>
+                <Tooltip title={recording ? "结束录音" : transcribing ? "正在识别" : "语音输入"}>
+                  <Button
+                    className={recording ? "voice-input recording" : "voice-input"}
+                    shape="circle"
+                    icon={transcribing ? <LoadingOutlined spin /> : <AudioOutlined />}
+                    onClick={toggleRecording}
+                    disabled={busy || loadingChat || transcribing}
+                    aria-label={recording ? "结束录音" : "开始语音输入"}
+                  />
+                </Tooltip>
                 {busy ? (
                   <Tooltip title="停止生成">
                     <Button

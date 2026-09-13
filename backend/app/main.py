@@ -30,6 +30,7 @@ from .user_settings import (
     ensure_user_settings,
     record_successful_question,
 )
+from .audio import AudioModelError, transcribe, synthesize
 
 app = FastAPI(title="经管之星 API", version="0.1.0")
 log = logging.getLogger("jingguan")
@@ -113,6 +114,35 @@ def login(body: Login, request: Request, response: Response):
 def logout(response: Response):
     response.delete_cookie("session", path="/")
     return {"ok": True}
+
+
+@app.post("/api/audio/transcribe")
+async def transcribe_audio(request: Request, user: User):
+    """接收浏览器 MediaRecorder 的原始音频并返回识别文字。"""
+    content_type = request.headers.get("content-type", "").split(";", 1)[0]
+    audio = await request.body()
+    if not audio:
+        raise HTTPException(400, "录音内容为空")
+    if len(audio) > 10 * 1024 * 1024:
+        raise HTTPException(413, "单次录音不能超过 10MB")
+    try:
+        return {"text": await transcribe(audio, content_type)}
+    except AudioModelError as exc:
+        raise HTTPException(502, str(exc)) from exc
+
+
+class SpeechRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=3000)
+
+
+@app.post("/api/audio/speech")
+async def text_to_speech(body: SpeechRequest, user: User):
+    """合成 AI 回答并直接代理音频，避免浏览器访问百炼临时地址。"""
+    try:
+        audio, media_type = await synthesize(body.text.strip())
+    except AudioModelError as exc:
+        raise HTTPException(502, str(exc)) from exc
+    return Response(content=audio, media_type=media_type)
 
 
 @app.get("/api/auth/me")
