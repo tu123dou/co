@@ -8,4 +8,5 @@ RUN useradd --create-home appuser
 COPY backend backend
 COPY scripts/grant-query.py scripts/grant-query.py
 USER appuser
-CMD ["sh", "-c", "alembic -c backend/alembic.ini upgrade head && python scripts/grant-query.py && python -m app.seed && python -m app.retrieval sync && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# API 启动不依赖外部向量服务；需要重建索引时单独执行 python -m app.retrieval sync。
+CMD ["sh", "-c", "alembic -c backend/alembic.ini upgrade head && python scripts/grant-query.py && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

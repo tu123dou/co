@@ -132,6 +132,32 @@ def test_query_persistence_export_and_isolation(clients):
         ).status_code
         == 200
     )
+    feedback_id = a.get("/api/feedbacks").json()["items"][0]["id"]
+    assert b.get("/api/feedbacks").json()["items"] == []
+    assert (
+        a.patch(
+            "/api/feedbacks/" + str(feedback_id),
+            json={"status": "resolved", "resolution_note": "已核查"},
+        ).status_code
+        == 403
+    )
+    # 超管可以查看跨用户反馈并保存校对结论。
+    with engine.begin() as conn:
+        conn.execute(
+            s.users.update()
+            .where(s.users.c.id == b.get("/api/auth/me").json()["id"])
+            .values(is_superuser=True)
+        )
+    assert feedback_id in {
+        row["id"] for row in b.get("/api/feedbacks").json()["items"]
+    }
+    assert (
+        b.patch(
+            "/api/feedbacks/" + str(feedback_id),
+            json={"status": "resolved", "resolution_note": "已核查"},
+        ).status_code
+        == 200
+    )
     assert (
         a.patch(
             "/api/conversations/" + cid, json={"title": "测试重命名", "pinned": True}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Alert, Button, Form, Input, Spin } from "antd";
 import {
   BarChartOutlined,
@@ -6,7 +6,8 @@ import {
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import { api, post } from "./api";
-import Workbench from "./Workbench";
+// 登录后再下载体积较大的工作台代码，缩短登录页首屏加载时间。
+const Workbench = lazy(() => import("./Workbench"));
 export default function App() {
   const [user, setUser] = useState<any>(null),
     [loading, setLoading] = useState(true),
@@ -26,10 +27,12 @@ export default function App() {
     );
   if (user)
     return (
-      <Workbench
-        user={user}
-        onLogout={() => post("/auth/logout").then(() => setUser(null))}
-      />
+      <Suspense fallback={<div className="screen-center"><Spin size="large" /></div>}>
+        <Workbench
+          user={user}
+          onLogout={() => post("/auth/logout").then(() => setUser(null))}
+        />
+      </Suspense>
     );
   return (
     <div className="login-page">

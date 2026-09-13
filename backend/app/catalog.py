@@ -129,6 +129,7 @@ TABLE_CATALOG = {
             "password_hash": "使用随机盐和 scrypt 生成的密码哈希；不保存明文密码。",
             "display_name": "用户在工作台中的展示名称。",
             "active": "账号是否有效；false 时禁止登录。",
+            "is_superuser": "是否为系统超管；超管可以跨用户查看并处理回复反馈。",
             "created_at": "账号创建时间，包含时区。",
         },
     },

@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Button,
   Collapse,
   Empty,
   Segmented,
+  Spin,
   Table,
   Tag,
   Tooltip,
@@ -26,7 +27,8 @@ import {
   PauseCircleOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
-import Chart from "./QueryChart";
+// 只有结果选择图表展示时才加载 ECharts 及绘图组件。
+const Chart = lazy(() => import("./QueryChart"));
 import { format, type Row, type Msg } from "./types";
 
 export function AnalysisSteps({ process }: { process: any[] }) {
@@ -384,12 +386,14 @@ export default function Answer({
               scroll={{ x: 550 }}
             />
           ) : (
-            <Chart
-              rows={r.rows}
-              type={tab === "pie" && !pieAllowed ? "bar" : tab}
-              unit={unit}
-              comparison={comparison}
-            />
+            <Suspense fallback={<Spin size="large" />}>
+              <Chart
+                rows={r.rows}
+                type={tab === "pie" && !pieAllowed ? "bar" : tab}
+                unit={unit}
+                comparison={comparison}
+              />
+            </Suspense>
           )}
           <div className="result-foot">
             <SafetyCertificateOutlined /> {masterData ? "基础资料实时查询" : `数据截止 ${r.cutoff_date}`}

@@ -277,6 +277,7 @@ def seed():
                 s.users.insert().values(
                     username="admin",
                     display_name="演示用户",
+                    is_superuser=True,
                     password_hash=hash_password(settings().admin_password),
                 )
             )

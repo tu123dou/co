@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Button,
@@ -47,8 +47,9 @@ import { api, post } from "./api";
 import type { Msg } from "./types";
 import Answer from "./QueryAnswer";
 import QuickQuestions from "./QuickQuestions";
-import WorkbenchSettingsPanel from "./WorkbenchSettings";
-import FeedbackManagement from "./FeedbackManagement";
+// 管理页面仅在用户打开时下载，避免占用智能问数主页面的首屏资源。
+const WorkbenchSettingsPanel = lazy(() => import("./WorkbenchSettings"));
+const FeedbackManagement = lazy(() => import("./FeedbackManagement"));
 import {
   DEFAULT_WORKBENCH_SETTINGS,
   type CommonQuestion,
@@ -567,7 +568,7 @@ export default function Workbench({
           <div className="page-path">系统管理 <span>/</span> <b>应用配置</b></div>
           <section className="management-card">
             <div className="management-heading"><ControlOutlined /><strong>应用配置</strong><span>以下设置仅对当前用户生效</span></div>
-            <WorkbenchSettingsPanel
+            <Suspense fallback={<Spin size="large" />}><WorkbenchSettingsPanel
               settings={workbenchSettings}
               models={catalog?.model.available || []}
               modelConfigured={Boolean(catalog?.model.configured)}
@@ -581,10 +582,14 @@ export default function Workbench({
                 } catch (error) { message.error((error as Error).message); }
                 finally { setTesting(false); }
               }}
-            />
+            /></Suspense>
           </section>
         </div>}
-        {page === "feedback" && <FeedbackManagement />}
+        {page === "feedback" && (
+          <Suspense fallback={<div className="screen-center"><Spin size="large" /></div>}>
+            <FeedbackManagement isSuperuser={Boolean(user.is_superuser)} />
+          </Suspense>
+        )}
         <div className="conversation-top">
           <div>
             <MessageOutlined />

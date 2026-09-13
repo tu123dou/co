@@ -190,6 +190,8 @@ users = table(
     C("password_hash", Text, nullable=False),
     C("display_name", S(80), nullable=False),
     C("active", Boolean, nullable=False, server_default="true"),
+    # 超管负责跨用户反馈校对；普通业务配置仍然始终按 user_id 隔离。
+    C("is_superuser", Boolean, nullable=False, server_default="false"),
     created(),
     schema="app",
 )

@@ -107,6 +107,7 @@ def login(body: Login, request: Request, response: Response):
     return {
         "id": user["id"],
         "display_name": user["display_name"],
+        "is_superuser": user["is_superuser"],
     }
 
 
@@ -147,7 +148,7 @@ async def text_to_speech(body: SpeechRequest, user: User):
 
 @app.get("/api/auth/me")
 def me(user: User):
-    return {k: user[k] for k in ["id", "display_name"]}
+    return {k: user[k] for k in ["id", "display_name", "is_superuser"]}
 
 
 @app.get("/api/health")
@@ -586,6 +587,8 @@ def list_feedbacks(
         "status": status,
         "limit": page_size,
         "offset": (page - 1) * page_size,
+        "user_id": user["id"],
+        "is_superuser": user["is_superuser"],
     }
     statement = text(
         """
@@ -612,6 +615,8 @@ def list_feedbacks(
             FROM app.feedbacks AS f
             JOIN app.users AS u ON u.id = f.user_id
             JOIN app.messages AS answer ON answer.id = f.message_id
+            -- 普通用户只能看到自己的反馈；超管可以集中校对全部用户反馈。
+            WHERE :is_superuser OR f.user_id = :user_id
         )
         SELECT *, count(*) OVER () AS total
         FROM review_rows
@@ -630,7 +635,9 @@ def list_feedbacks(
 
 @app.patch("/api/feedbacks/{feedback_id}")
 def review_feedback(feedback_id: int, body: FeedbackReview, user: User):
-    """保存回复核查状态和处理说明。所有登录用户均可使用此业务能力。"""
+    """仅允许超管保存跨用户回复核查状态和处理说明。"""
+    if not user["is_superuser"]:
+        raise HTTPException(403, "仅超管可以处理反馈")
     with engine.begin() as conn:
         row = conn.execute(
             update(s.feedbacks)

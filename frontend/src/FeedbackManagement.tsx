@@ -20,7 +20,7 @@ const formatTime = (value: string) =>
     hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
   }).format(new Date(value)).replaceAll("/", "-");
 
-export default function FeedbackManagement() {
+export default function FeedbackManagement({ isSuperuser }: { isSuperuser: boolean }) {
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -87,7 +87,15 @@ export default function FeedbackManagement() {
             { title: "问题", dataIndex: "question", ellipsis: true },
             { title: "反馈时间", dataIndex: "created_at", width: 195, render: formatTime },
             { title: "状态", dataIndex: "status", width: 120, render: (value) => value === "resolved" ? <Tag color="green">已处理</Tag> : <Tag color="orange">待处理</Tag> },
-            { title: "操作", width: 100, render: (_, row) => <Button type="link" onClick={() => openReview(row)}>{row.status === "pending" ? "处理" : "查看"}</Button> },
+            { title: "操作", width: 100, render: (_, row) => (
+              <Button type="link" onClick={() => {
+                if (!isSuperuser && row.status === "pending") {
+                  message.warning("仅超管可以处理反馈");
+                  return;
+                }
+                openReview(row);
+              }}>{row.status === "pending" ? "处理" : "查看"}</Button>
+            ) },
           ]}
           scroll={{ x: 900 }}
         />
@@ -97,7 +105,8 @@ export default function FeedbackManagement() {
             onChange={(nextPage, nextSize) => { setPage(nextPage); setPageSize(nextSize); }} />
         </div>
       </section>
-      <Modal title="回复校对" open={Boolean(current)} confirmLoading={saving} okText="保存" cancelText="取消"
+      <Modal title="回复校对" open={Boolean(current)} confirmLoading={saving} okText="保存" cancelText={isSuperuser ? "取消" : "关闭"}
+        footer={isSuperuser ? undefined : (_, { CancelBtn }) => <CancelBtn />}
         onCancel={() => setCurrent(null)}
         onOk={async () => {
           if (!current) return;
@@ -115,9 +124,9 @@ export default function FeedbackManagement() {
           <label>AI 回答</label><div className="review-answer">{current.answer}</div>
           <label>用户反馈</label><div>{current.comment}</div>
           <label>处理状态</label>
-          <Select value={reviewStatus} onChange={setReviewStatus} options={[{ value: "pending", label: "待处理" }, { value: "resolved", label: "已处理" }]} />
+          <Select disabled={!isSuperuser} value={reviewStatus} onChange={setReviewStatus} options={[{ value: "pending", label: "待处理" }, { value: "resolved", label: "已处理" }]} />
           <label>处理说明</label>
-          <Input.TextArea rows={4} maxLength={2000} showCount value={note} onChange={(event) => setNote(event.target.value)} placeholder="填写核查结论或后续处理说明" />
+          <Input.TextArea disabled={!isSuperuser} rows={4} maxLength={2000} showCount value={note} onChange={(event) => setNote(event.target.value)} placeholder="填写核查结论或后续处理说明" />
         </div>}
       </Modal>
     </div>

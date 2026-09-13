@@ -25,6 +25,14 @@ docker compose ps
 curl http://127.0.0.1/api/health
 ```
 
+首次初始化或业务目录变化后，单独同步一次向量索引：
+
+```bash
+docker compose run --rm backend python -m app.retrieval sync
+```
+
+向量同步失败不会阻止后端启动，问数会暂时使用内置业务目录继续工作。
+
 阿里云安全组只需放行公网 TCP 80；PostgreSQL 仍只监听服务器本机的 `127.0.0.1:54330`。以后配置域名和 HTTPS 时，将 `ALLOWED_ORIGIN` 改成实际 HTTPS 域名并设置 `COOKIE_SECURE=true`。
 
 ## 当前机器访问
@@ -44,7 +52,7 @@ python3 scripts/setup-env.py
 docker compose up --build -d
 ```
 
-访问 `http://127.0.0.1:5178`。PostgreSQL 仅映射到本机 `127.0.0.1:54330`，数据保存在 Compose 命名卷中。后端启动时运行 Alembic、初始化模拟数据，并用百炼 `qwen3.7-text-embedding-flash` 同步 1024 维业务语义目录。
+访问 `http://127.0.0.1:5178`。PostgreSQL 仅映射到本机 `127.0.0.1:54330`，数据保存在 Compose 命名卷中。后端启动时只运行 Alembic 和数据初始化，不再等待外部向量服务；需要重建语义目录时执行上面的独立同步命令。
 
 - 初始化脚本发现数据版本存在时直接退出，绝不覆盖已有业务数据。
 - `.env` 中的初始登录密码仅用于首次创建账号，之后修改环境变量不会自动重置已有密码。
