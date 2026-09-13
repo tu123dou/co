@@ -1,0 +1,75 @@
+.composer-wrap {
+  padding: 12px 30px 11px;
+  width: 100%;
+  max-width: 950px;
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+.composer {
+  background: white;
+  border: 1px solid #dce4f1;
+  box-shadow: 0 5px 22px #153d7807;
+  border-radius: 14px;
+  padding: 13px 13px 11px;
+}
+.composer:focus-within {
+  border-color: #8facdf;
+  box-shadow: 0 0 0 3px #2563eb08;
+}
+.composer textarea {
+  font-size: 14px !important;
+  color: #3f526e;
+  line-height: 1.7 !important;
+  padding: 4px 7px !important;
+}
+.composer textarea::placeholder {
+  color: #a0adbf;
+}
+.composer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  gap: 12px;
+}
+.composer-bottom > button,
+.composer-left-actions > button,
+.composer-left-actions > .ant-popover-open,
+.quick-question-trigger {
+  border: 0;
+  border-radius: 6px;
+  background: #f2f6fc;
+  color: #7890b2;
+  padding: 6px 9px;
+  display: flex;
+  gap: 7px;
+  font-size: 12px;
+  align-items: center;
+  cursor: pointer;
+}
+.composer-left-actions > button > span:last-child:not(.anticon) {
+  color: #a6b4c7;
+  border-left: 1px solid #dce5f2;
+  padding-left: 7px;
+  font-size: 11px;
+}
+.composer-bottom > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.composer-bottom .composer-left-actions {
+  gap: 7px;
+  min-width: 0;
+}
+.enter-hint {
+  font-size: 11px;
+  color: #b0bac9;
+}
+.composer-note {
+  text-align: center;
+  font-size: 11px;
+  color: #a9b4c4;
+  margin: 9px 0 0;
+  line-height: 1.6;
+}

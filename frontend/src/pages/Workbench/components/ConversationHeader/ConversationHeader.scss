@@ -1,0 +1,35 @@
+.conversation-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 30px;
+  flex-shrink: 0;
+}
+.conversation-top > div {
+  display: flex;
+  gap: 9px;
+  font-size: 14px;
+  align-items: center;
+  color: #75849a;
+  min-width: 0;
+}
+.conversation-top > div > span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 600px;
+}
+.conversation-top .ant-btn {
+  font-size: 12px;
+  color: #8d9aab;
+}
+.model-dot {
+  width: 6px;
+  height: 6px;
+  background: #bec7d4;
+  border-radius: 50%;
+  display: inline-block;
+}
+.model-dot.ready {
+  background: #66a98c;
+}

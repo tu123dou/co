@@ -1,0 +1,14 @@
+// 全局样式入口。按页面职责拆分，导入顺序保持原有层叠关系。
+@use "./global";
+@use "../pages/Login/LoginPage";
+@use "../pages/Workbench/components/ConversationHeader/ConversationHeader";
+@use "../pages/Workbench/components/ConversationContent/ConversationContent";
+@use "../pages/Workbench/components/ConversationComposer/ConversationComposer";
+@use "../pages/Workbench/components/QuickQuestions/QuickQuestions";
+@use "../pages/Workbench/components/QueryAnswer/QueryAnswer";
+@use "../layouts/WorkspaceMenu/WorkspaceMenu";
+@use "../layouts/WorkspaceLayout/WorkspaceLayout";
+@use "../pages/Feedback/FeedbackPage";
+@use "../pages/Settings/SettingsPage";
+@use "./overrides";
+@use "./responsive";

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Empty, Input, Modal, Pagination, Select, Table, Tag, message } from "antd";
 import { ExclamationCircleFilled, SearchOutlined } from "@ant-design/icons";
-import { listFeedbacks, reviewFeedback } from "../api/feedback";
+import { listFeedbacks, reviewFeedback } from "../../api/feedback";
 
 type FeedbackRow = {
   id: number;

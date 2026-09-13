@@ -1,0 +1,230 @@
+.sidebar {
+  width: 244px;
+  flex-shrink: 0;
+  background: #f1f5fa;
+  border-right: 1px solid #e3e9f2;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 17px 16px;
+  transition: width 0.2s;
+}
+.sidebar .brand {
+  font-size: 21px;
+  gap: 10px;
+  padding: 0 9px;
+  white-space: nowrap;
+}
+.sidebar .brand small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: #8594a8;
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
+.new-chat {
+  margin: 30px 4px 10px 10px;
+  height: 42px !important;
+  box-shadow: 0 4px 10px #2563eb16 !important;
+}
+.nav-item {
+  border: 0;
+  background: transparent;
+  color: #66758b;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 43px;
+  padding: 10px 14px;
+  width: 100%;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  margin: 3px 0;
+}
+.nav-item > .anticon {
+  font-size: 18px;
+}
+.nav-item:hover {
+  background: #e7edf6;
+}
+.nav-item.active {
+  background: #e4edfe;
+  color: #2563eb;
+  font-weight: 600;
+}
+.nav-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: #9aa6b8;
+}
+.history {
+  margin-top: 27px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.history-heading {
+  padding: 0 14px;
+  font-size: 12px;
+  color: #8a98ab;
+  display: flex;
+  justify-content: space-between;
+  letter-spacing: 0.5px;
+}
+.history-search {
+  margin-top: 10px;
+  font-size: 12px !important;
+  color: #8c9bad;
+}
+.history-search input {
+  font-size: 12px !important;
+}
+.history-list {
+  overflow: auto;
+  margin-top: 5px;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  border-radius: 7px;
+  min-height: 38px;
+  margin: 3px 0;
+}
+.history-item.selected {
+  background: #e4ebf6;
+}
+.history-item:hover {
+  background: #e6ecf5;
+}
+.history-item > button:first-child {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 10px 0px 10px 14px;
+  color: #617086;
+  font-size: 13px;
+  cursor: pointer;
+}
+.history-item .ant-btn {
+  opacity: 0;
+  color: #7a8aa0;
+}
+.history-item:hover .ant-btn,
+.history-item:focus-within .ant-btn,
+.history-item.selected .ant-btn {
+  opacity: 1;
+}
+.history-empty {
+  font-size: 12px;
+  color: #9ba7b7;
+  padding: 14px;
+}
+.pin-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  background: #6f95d9;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 12px;
+}
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #e1e7f0;
+  padding: 18px 9px 0;
+  font-size: 13px;
+}
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #dee8f7;
+  color: #5479b6;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.user-row small {
+  display: block;
+  font-size: 11px;
+  color: #8d9cb1;
+  margin-top: 3px;
+}
+.user-row .ant-btn {
+  margin-left: auto;
+}
+.is-collapsed .sidebar {
+  width: 78px;
+  padding: 28px 11px 16px;
+}
+.is-collapsed .sidebar .brand {
+  padding: 0 7px;
+}
+.is-collapsed .new-chat {
+  padding: 0;
+  margin-top: 30px;
+}
+.is-collapsed .nav-item {
+  justify-content: center;
+  padding: 12px;
+}
+.is-collapsed .user-row {
+  padding: 16px 10px 0;
+}
+.metric-list > div {
+  padding: 17px 0;
+  border-bottom: 1px solid #eef1f7;
+}
+.metric-list h3 {
+  font-size: 15px;
+  display: flex;
+  gap: 12px;
+  margin: 0;
+}
+.metric-list p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #78889e;
+}
+.metric-list small {
+  color: #a0aec1;
+  font-size: 12px;
+}
+.tag-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.favorite-list > div {
+  padding: 14px 0;
+  border-bottom: 1px solid #edf1f6;
+}
+.favorite-list > div > button:first-child {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  border: 0;
+  background: white;
+  text-align: left;
+  color: #4d6688;
+  font-size: 14px;
+  line-height: 1.8;
+  cursor: pointer;
+}
+.favorite-list .ant-btn {
+  margin-top: 8px;
+  color: #9aa7ba;
+  font-size: 12px;
+}

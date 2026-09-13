@@ -1,6 +1,7 @@
 import { Button, Empty, Popconfirm, Popover, Tabs, Tag } from "antd";
 import { DeleteOutlined, StarFilled, ThunderboltOutlined } from "@ant-design/icons";
-import type { CommonQuestion } from "../config/workbench";
+import type { CommonQuestion } from "../../../../config/workbench";
+import type { FavoriteQuestion } from "../../../../models/workbench";
 
 export default function QuickQuestions({
   open,
@@ -15,7 +16,7 @@ export default function QuickQuestions({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   common: CommonQuestion[];
-  favorites: any[];
+  favorites: FavoriteQuestion[];
   commonEnabled: boolean;
   onPick: (question: string) => void;
   onRemoveCommon: (id: number) => Promise<void>;

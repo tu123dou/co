@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { Row } from "../models/query";
+import type { Row } from "../../../../models/query";
 
 // 图表统一最多显示两位小数；整数不额外补零，避免 Tooltip 暴露计算精度尾数。
 const formatChartNumber = (value: unknown) => {
@@ -28,7 +28,7 @@ export default function Chart({
     let chart: any;
     let alive = true;
     let resize: ResizeObserver;
-    import("../lib/echarts").then((echarts) => {
+    import("../../../../lib/echarts").then((echarts) => {
       if (!alive || !element.current) return;
       chart = echarts.init(element.current);
       const valid = rows.filter((r) => r.value !== null);
@@ -60,7 +60,8 @@ export default function Chart({
           textStyle: { color: "#66758c" },
         },
         grid: {
-          top: 25,
+          // 为 Y 轴单位预留空间，避免“万元/百分比”贴近容器顶部被裁切。
+          top: 48,
           right: 24,
           bottom: comparison ? 70 : 50,
           left: money ? 68 : 52,
@@ -85,6 +86,7 @@ export default function Chart({
           : {
               type: "value",
               name: money ? "万元" : "%",
+              nameGap: 14,
               nameTextStyle: { color: "#8a96a8" },
               splitLine: { lineStyle: { color: "#edf1f7", type: "dashed" } },
               axisLabel: {
@@ -96,8 +98,9 @@ export default function Chart({
           ? [
               {
                 type: "pie",
-                radius: ["45%", "70%"],
-                center: ["50%", "43%"],
+                // 缩小外半径并下移圆心，为顶部数据标签预留完整显示空间。
+                radius: ["40%", "64%"],
+                center: ["50%", "47%"],
                 avoidLabelOverlap: true,
                 label: { formatter: "{b}\n{d}%", fontSize: 12 },
                 data: valid.map((r) => ({ name: r.label, value: r.value })),

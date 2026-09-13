@@ -1,0 +1,159 @@
+// 会话内容区占满输入框之外的剩余高度，消息在内部独立滚动。
+.chat-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.chat-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scroll-behavior: smooth;
+}
+.welcome {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 34px 28px 20px;
+  text-align: center;
+}
+.welcome-mark {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 19px;
+  color: #3975ee;
+  font-size: 33px;
+  background: linear-gradient(145deg, #edf4ff, #dfeaff);
+  border: 1px solid #d4e3fb;
+  box-shadow: 0 6px 16px #316ee90b;
+  margin: 0 auto 19px;
+}
+.welcome .eyebrow {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: #8095b4;
+}
+.welcome h1 {
+  font-size: 29px;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin: 13px 0;
+  color: #203854;
+}
+.welcome > p {
+  color: #8a98ac;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.capability-tags {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  color: #8a9bb1;
+  font-size: 12px;
+  margin: 23px 0 42px;
+}
+.capability-tags .anticon {
+  margin-right: 5px;
+  color: #6b93cf;
+}
+.suggestion-heading {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  text-align: left;
+  color: #687b95;
+  margin-bottom: 13px;
+}
+.suggestion-refresh {
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  color: #a1adbd;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+.suggestion-refresh:hover:not(:disabled) {
+  color: #3975df;
+}
+.suggestion-refresh:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.question-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.question-grid > button {
+  border: 1px solid #e4eaf3;
+  border-radius: 11px;
+  background: white;
+  min-height: 79px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  text-align: left;
+  font-size: 14px;
+  color: #54667f;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: all 0.16s;
+}
+.question-grid > button:hover {
+  border-color: #a9c3f5;
+  box-shadow: 0 5px 16px #194b9310;
+  transform: translateY(-1px);
+}
+.question-grid > button:disabled {
+  cursor: wait;
+}
+.question-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 10px;
+  background: #edf3ff;
+  color: #6589cd;
+  font-size: 18px;
+}
+.qi-1,
+.qi-4 {
+  background: #ecf6f3;
+  color: #74a79a;
+}
+.qi-3 {
+  background: #f2effb;
+  color: #a08acd;
+}
+.qi-5 {
+  background: #fbf4e8;
+  color: #c4a269;
+}
+.question-grid > button > .anticon:last-child {
+  margin-left: auto;
+  color: #b9c6d8;
+  font-size: 12px;
+}
+.data-context {
+  margin: 24px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #99a6b9;
+  flex-wrap: wrap;
+}
+.data-context button {
+  border: 0;
+  background: none;
+  color: #7c9bcd;
+  font-size: 12px;
+  cursor: pointer;
+}

@@ -1,7 +1,8 @@
 import { post, request } from "./client";
 import type { WorkbenchSettings } from "../config/workbench";
+import type { WorkbenchCatalog } from "../models/workbench";
 
-export const getCatalog = () => request<any>("/catalog");
+export const getCatalog = () => request<WorkbenchCatalog>("/catalog");
 export const getWorkbenchSettings = () => request<WorkbenchSettings>("/workbench/settings");
 export const updateWorkbenchSettings = (body: Partial<WorkbenchSettings>) =>
   request<WorkbenchSettings>("/workbench/settings", { method: "PATCH", body: JSON.stringify(body) });

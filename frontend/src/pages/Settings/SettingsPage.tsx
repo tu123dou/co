@@ -6,6 +6,7 @@ import {
   InputNumber,
   Modal,
   Select,
+  Spin,
   Switch,
   Tag,
   message,
@@ -13,6 +14,7 @@ import {
 import {
   CheckOutlined,
   CommentOutlined,
+  ControlOutlined,
   DeleteOutlined,
   FireOutlined,
   PlusOutlined,
@@ -20,11 +22,13 @@ import {
   SettingOutlined,
   UnorderedListOutlined,
 } from "@ant-design/icons";
-import type { WorkbenchSettings } from "../config/workbench";
+import type { WorkbenchSettings } from "../../config/workbench";
+import { DEFAULT_WORKBENCH_SETTINGS } from "../../config/workbench";
+import { getCatalog, getWorkbenchSettings, testModel, updateWorkbenchSettings } from "../../api/workbench";
 
 type ModalName = "welcome" | "common" | "model" | "";
 
-export default function WorkbenchSettingsPanel({
+function SettingsPanel({
   settings,
   models,
   modelConfigured,
@@ -300,4 +304,51 @@ export default function WorkbenchSettingsPanel({
       </Modal>
     </div>
   );
+}
+
+/** 应用配置是与智能问数同级的独立路由页面。 */
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<WorkbenchSettings>(DEFAULT_WORKBENCH_SETTINGS);
+  const [models, setModels] = useState<string[]>([]);
+  const [modelConfigured, setModelConfigured] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [testing, setTesting] = useState(false);
+
+  useEffect(() => {
+    Promise.all([getWorkbenchSettings(), getCatalog()])
+      .then(([currentSettings, catalog]) => {
+        setSettings(currentSettings);
+        setModels(catalog?.model?.available || []);
+        setModelConfigured(Boolean(catalog?.model?.configured));
+      })
+      .catch((error) => message.error(error.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return <div className="management-page settings-page">
+    <div className="page-path">系统管理 <span>/</span> <b>应用配置</b></div>
+    <section className="management-card">
+      <div className="management-heading">
+        <ControlOutlined /><strong>应用配置</strong><span>以下设置仅对当前用户生效</span>
+      </div>
+      {loading ? <div className="screen-center"><Spin size="large" /></div> : <SettingsPanel
+        settings={settings}
+        models={models}
+        modelConfigured={modelConfigured}
+        testing={testing}
+        onSave={async (values) => setSettings(await updateWorkbenchSettings(values))}
+        onTest={async (model) => {
+          setTesting(true);
+          try {
+            const result = await testModel(model);
+            message.success(`${result.model} 连接成功，耗时 ${(result.duration_ms / 1000).toFixed(1)} 秒`);
+          } catch (error) {
+            message.error((error as Error).message);
+          } finally {
+            setTesting(false);
+          }
+        }}
+      />}
+    </section>
+  </div>;
 }
