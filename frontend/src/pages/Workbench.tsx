@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Alert,
   Button,
@@ -42,11 +43,22 @@ import {
   AudioOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
-import { api, post } from "./api";
-
-import type { Msg } from "./types";
-import Answer from "./QueryAnswer";
-import QuickQuestions from "./QuickQuestions";
+import type { CurrentUser } from "../api/auth";
+import { transcribeAudio } from "../api/audio";
+import {
+  askQuestion, createConversation, deleteConversation, getConversation,
+  listConversations, updateConversation,
+} from "../api/conversations";
+import { createFeedback } from "../api/feedback";
+import {
+  addFavorite, deleteCommonQuestion, deleteFavorite, listCommonQuestions, listFavorites,
+} from "../api/questions";
+import {
+  getCatalog, getWorkbenchSettings, testModel, updateWorkbenchSettings,
+} from "../api/workbench";
+import type { Msg } from "../models/query";
+import Answer from "../components/QueryAnswer";
+import QuickQuestions from "../components/QuickQuestions";
 // 管理页面仅在用户打开时下载，避免占用智能问数主页面的首屏资源。
 const WorkbenchSettingsPanel = lazy(() => import("./WorkbenchSettings"));
 const FeedbackManagement = lazy(() => import("./FeedbackManagement"));
@@ -54,7 +66,7 @@ import {
   DEFAULT_WORKBENCH_SETTINGS,
   type CommonQuestion,
   type WorkbenchSettings,
-} from "./workbenchConfig";
+} from "../config/workbench";
 
 // 等待回答时按真实处理阶段轮换提示，避免长时间显示不变的技术步骤。
 const THINKING_COPY: Record<string, string[]> = {
@@ -92,11 +104,14 @@ export default function Workbench({
   user,
   onLogout,
 }: {
-  user: any;
+  user: CurrentUser;
   onLogout: () => void;
 }) {
-  const [page, setPage] = useState<"ask" | "settings" | "feedback">("ask"),
-    [catalog, setCatalog] = useState<any>(null),
+  const location = useLocation();
+  const navigate = useNavigate();
+  const page = location.pathname === "/settings" ? "settings" : location.pathname === "/feedback" ? "feedback" : "ask";
+  const setPage = (next: "ask" | "settings" | "feedback") => navigate(next === "ask" ? "/ask" : `/${next}`);
+  const [catalog, setCatalog] = useState<any>(null),
     [workbenchSettings, setWorkbenchSettings] = useState<WorkbenchSettings>(
       DEFAULT_WORKBENCH_SETTINGS,
     ),
@@ -129,16 +144,21 @@ export default function Workbench({
     recorder = useRef<MediaRecorder | null>(null),
     recordingStream = useRef<MediaStream | null>(null),
     recordingChunks = useRef<Blob[]>([]);
-  const refresh = () => api("/conversations").then(setConversations);
+  const refresh = () => listConversations().then(setConversations);
   const refreshCommonQuestions = () =>
-    api("/common-questions").then(setCommonQuestions);
+    listCommonQuestions().then(setCommonQuestions);
+  useEffect(() => {
+    if (!["/ask", "/settings", "/feedback"].includes(location.pathname)) {
+      navigate("/ask", { replace: true });
+    }
+  }, [location.pathname, navigate]);
   useEffect(() => {
     Promise.all([
-      api("/catalog").then(setCatalog),
-      api("/workbench/settings").then(setWorkbenchSettings),
+      getCatalog().then(setCatalog),
+      getWorkbenchSettings().then(setWorkbenchSettings),
       refreshCommonQuestions(),
       refresh(),
-      api("/favorites").then(setFavorites),
+      listFavorites().then(setFavorites),
     ]).catch((e) => setError(e.message));
   }, []);
   useEffect(() => {
@@ -192,11 +212,7 @@ export default function Workbench({
         if (!blob.size) return;
         setTranscribing(true);
         try {
-          const response = await fetch("/api/audio/transcribe", {
-            method: "POST",
-            headers: { "Content-Type": blob.type },
-            body: blob,
-          });
+          const response = await transcribeAudio(blob);
           if (!response.ok) {
             const data = await response.json().catch(() => ({}));
             throw new Error(data.detail || "语音识别失败");
@@ -224,7 +240,7 @@ export default function Workbench({
     setLoadingChat(true);
     setError("");
     try {
-      const c = await api("/conversations/" + id);
+      const c = await getConversation(id);
       setCid(id);
       setMsgs(c.messages);
     } catch (e) {
@@ -251,7 +267,7 @@ export default function Workbench({
     let id = cid;
     try {
       if (!id) {
-        const c = await post("/conversations");
+        const c = await createConversation();
         id = c.id;
         setCid(id);
       }
@@ -259,12 +275,7 @@ export default function Workbench({
         ...m,
         { id: createClientMessageId(), role: "user", content: question },
       ]);
-      const res = await fetch("/api/conversations/" + id + "/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
-        signal: controller.signal,
-      });
+      const res = await askQuestion(id, question, controller.signal);
       if (!res.ok) {
         const d = await res.json();
         throw new Error(d.detail || "问数失败");
@@ -318,10 +329,7 @@ export default function Workbench({
   const saveWorkbenchSettings = async (
     values: Partial<WorkbenchSettings>,
   ) => {
-    const updated = await api("/workbench/settings", {
-      method: "PATCH",
-      body: JSON.stringify(values),
-    });
+    const updated = await updateWorkbenchSettings(values);
     setWorkbenchSettings(updated);
     if ("starter_questions" in values) setQuestionOffset(0);
     setCatalog((current: any) =>
@@ -333,7 +341,7 @@ export default function Workbench({
       "common_questions_enabled" in values ||
       "common_question_threshold" in values
     ) {
-      setCommonQuestions(await api("/common-questions"));
+      setCommonQuestions(await listCommonQuestions());
     }
   };
   const questionPool = Array.from(
@@ -350,32 +358,29 @@ export default function Workbench({
     try {
       const saved = favorites.find((item) => item.question === q);
       if (saved) {
-        await api("/favorites/" + saved.id, { method: "DELETE" });
+        await deleteFavorite(saved.id);
       } else {
-        await post("/favorites", { question: q });
+        await addFavorite(q);
       }
-      setFavorites(await api("/favorites"));
+      setFavorites(await listFavorites());
       message.success(saved ? "已取消收藏" : "已收藏问题");
     } catch (e) {
       message.error((e as Error).message);
     }
   };
   const removeFavorite = async (id: number) => {
-    await api("/favorites/" + id, { method: "DELETE" });
-    setFavorites(await api("/favorites"));
+    await deleteFavorite(id);
+    setFavorites(await listFavorites());
     message.success("已取消收藏");
   };
   const removeCommonQuestion = async (id: number) => {
-    await api("/common-questions/" + id, { method: "DELETE" });
-    setCommonQuestions(await api("/common-questions"));
+    await deleteCommonQuestion(id);
+    setCommonQuestions(await listCommonQuestions());
     message.success("已删除常见问题");
   };
   const handleConversationAction = (c: any, key: string) => {
     if (key === "pin") {
-      api("/conversations/" + c.id, {
-        method: "PATCH",
-        body: JSON.stringify({ pinned: !c.pinned }),
-      })
+      updateConversation(c.id, { pinned: !c.pinned })
         .then(refresh)
         .catch((e) => message.error(e.message));
       return;
@@ -386,7 +391,7 @@ export default function Workbench({
       return;
     }
     if (key === "delete") {
-      api("/conversations/" + c.id, { method: "DELETE" })
+      deleteConversation(c.id)
         .then(async () => {
           if (cid === c.id) {
             setCid(null);
@@ -577,7 +582,7 @@ export default function Workbench({
               onTest={async (model) => {
                 setTesting(true);
                 try {
-                  const result = await post("/model/test", { model });
+                  const result = await testModel(model);
                   message.success(`${result.model} 连接成功，耗时 ${(result.duration_ms / 1000).toFixed(1)} 秒`);
                 } catch (error) { message.error((error as Error).message); }
                 finally { setTesting(false); }
@@ -1017,7 +1022,7 @@ export default function Workbench({
         okButtonProps={{ disabled: !remark.trim() }}
         onOk={async () => {
           try {
-            await post("/feedbacks", { message_id: feedback, comment: remark });
+            await createFeedback(feedback, remark);
             message.success("反馈已保存");
             setFeedback("");
             setRemark("");
@@ -1044,10 +1049,7 @@ export default function Workbench({
         okButtonProps={{ disabled: !renameText.trim() }}
         onOk={async () => {
           try {
-            await api("/conversations/" + rename.id, {
-              method: "PATCH",
-              body: JSON.stringify({ title: renameText.trim() }),
-            });
+            await updateConversation(rename.id, { title: renameText.trim() });
             setRename(null);
             await refresh();
           } catch (e) {

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { Row } from "./types";
+import type { Row } from "../models/query";
 
 // 图表统一最多显示两位小数；整数不额外补零，避免 Tooltip 暴露计算精度尾数。
 const formatChartNumber = (value: unknown) => {
@@ -28,7 +28,7 @@ export default function Chart({
     let chart: any;
     let alive = true;
     let resize: ResizeObserver;
-    import("./echarts").then((echarts) => {
+    import("../lib/echarts").then((echarts) => {
       if (!alive || !element.current) return;
       chart = echarts.init(element.current);
       const valid = rows.filter((r) => r.value !== null);

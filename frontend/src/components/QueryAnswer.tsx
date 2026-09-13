@@ -29,7 +29,8 @@ import {
 } from "@ant-design/icons";
 // 只有结果选择图表展示时才加载 ECharts 及绘图组件。
 const Chart = lazy(() => import("./QueryChart"));
-import { format, type Row, type Msg } from "./types";
+import { synthesizeSpeech } from "../api/audio";
+import { format, type Row, type Msg } from "../models/query";
 
 export function AnalysisSteps({ process }: { process: any[] }) {
   return (
@@ -102,11 +103,7 @@ export default function Answer({
     }
     setSpeechLoading(true);
     try {
-      const response = await fetch("/api/audio/speech", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: msg.content.slice(0, 3000) }),
-      });
+      const response = await synthesizeSpeech(msg.content.slice(0, 3000));
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.detail || "语音合成失败");

@@ -20,7 +20,7 @@ import {
   SettingOutlined,
   UnorderedListOutlined,
 } from "@ant-design/icons";
-import type { WorkbenchSettings } from "./workbenchConfig";
+import type { WorkbenchSettings } from "../config/workbench";
 
 type ModalName = "welcome" | "common" | "model" | "";
 

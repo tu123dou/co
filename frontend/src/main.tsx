@@ -2,11 +2,12 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
+import { BrowserRouter } from "react-router-dom";
 import App from "./App";
-import "./style.css";
+import "./styles/index.less";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ConfigProvider
+    <BrowserRouter><ConfigProvider
       locale={zhCN}
       theme={{
         token: {
@@ -19,6 +20,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       }}
     >
       <App />
-    </ConfigProvider>
+    </ConfigProvider></BrowserRouter>
   </React.StrictMode>,
 );

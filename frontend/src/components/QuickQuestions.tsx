@@ -1,6 +1,6 @@
 import { Button, Empty, Popconfirm, Popover, Tabs, Tag } from "antd";
 import { DeleteOutlined, StarFilled, ThunderboltOutlined } from "@ant-design/icons";
-import type { CommonQuestion } from "./workbenchConfig";
+import type { CommonQuestion } from "../config/workbench";
 
 export default function QuickQuestions({
   open,

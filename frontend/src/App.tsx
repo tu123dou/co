@@ -5,16 +5,16 @@ import {
   ArrowRightOutlined,
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
-import { api, post } from "./api";
+import { getCurrentUser, login, logout, type CurrentUser } from "./api/auth";
 // 登录后再下载体积较大的工作台代码，缩短登录页首屏加载时间。
-const Workbench = lazy(() => import("./Workbench"));
+const Workbench = lazy(() => import("./pages/Workbench"));
 export default function App() {
-  const [user, setUser] = useState<any>(null),
+  const [user, setUser] = useState<CurrentUser | null>(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   useEffect(() => {
-    api("/auth/me")
+    getCurrentUser()
       .then(setUser)
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -30,7 +30,7 @@ export default function App() {
       <Suspense fallback={<div className="screen-center"><Spin size="large" /></div>}>
         <Workbench
           user={user}
-          onLogout={() => post("/auth/logout").then(() => setUser(null))}
+          onLogout={() => logout().then(() => setUser(null))}
         />
       </Suspense>
     );
@@ -82,7 +82,7 @@ export default function App() {
               setBusy(true);
               setError("");
               try {
-                setUser(await post("/auth/login", values));
+                setUser(await login(values));
               } catch (e) {
                 setError((e as Error).message);
               } finally {

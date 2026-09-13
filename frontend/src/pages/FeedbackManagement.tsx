@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Empty, Input, Modal, Pagination, Select, Table, Tag, message } from "antd";
 import { ExclamationCircleFilled, SearchOutlined } from "@ant-design/icons";
-import { api } from "./api";
+import { listFeedbacks, reviewFeedback } from "../api/feedback";
 
 type FeedbackRow = {
   id: number;
@@ -41,7 +41,7 @@ export default function FeedbackManagement({ isSuperuser }: { isSuperuser: boole
         question, username, status,
         page: String(targetPage), page_size: String(targetSize),
       });
-      const data = await api(`/feedbacks?${params}`);
+      const data = await listFeedbacks(params);
       setRows(data.items);
       setTotal(data.total);
     } catch (error) {
@@ -112,7 +112,7 @@ export default function FeedbackManagement({ isSuperuser }: { isSuperuser: boole
           if (!current) return;
           setSaving(true);
           try {
-            await api(`/feedbacks/${current.id}`, { method: "PATCH", body: JSON.stringify({ status: reviewStatus, resolution_note: note }) });
+            await reviewFeedback(current.id, { status: reviewStatus, resolution_note: note });
             message.success("处理结果已保存");
             setCurrent(null);
             await load();

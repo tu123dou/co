@@ -129,7 +129,10 @@ cd frontend && npm run build
 - `backend/app/main.py`：认证、会话、流式问数与辅助 API。
 - `backend/app/schema.py`：27 张领域表结构；`alembic/`：冻结迁移。
 - `backend/app/seed.py`：可重复、不可覆盖的模拟数据生成器。
-- `frontend/src/Workbench.tsx`：问数工作台与结果展示。
+- `frontend/src/pages/`：智能问数、应用配置和回复校对页面。
+- `frontend/src/components/`：回答、图表和快捷问题等公共业务组件。
+- `frontend/src/api/`：按认证、会话、工作台、问题、反馈和语音拆分的请求模块。
+- `frontend/src/styles/`：按基础、登录、工作台、回答、管理页和响应式规则拆分的 Less 样式。
 - `docs/architecture.md`：执行边界与后续扩展。
 
 模型仅接收召回的业务目录、合法实体值、用户问题和近期上下文，不获得数据库账号或 API Key。pgvector 只选择相关指标、维度、表字段、实体和示例；模型仍只生成受 Pydantic 约束的计划，SQL 由程序编译并经 SQLGlot 校验。第一版直接使用 SQLAlchemy + pgvector，不引入 LlamaIndex。

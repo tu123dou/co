@@ -1,0 +1,184 @@
+.settings p {
+  font-size: 14px;
+  color: #8897ac;
+  line-height: 1.8;
+}
+.settings hr {
+  border: 0;
+  border-top: 1px solid #e9eef6;
+  margin: 28px 0;
+}
+.settings h3 {
+  font-size: 16px;
+}
+.settings > .ant-alert {
+  margin-bottom: 18px;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.page-settings > .conversation-top,
+.page-settings > .page-error,
+.page-settings > .chat-scroll,
+.page-settings > .composer-wrap,
+.page-feedback > .conversation-top,
+.page-feedback > .page-error,
+.page-feedback > .chat-scroll,
+.page-feedback > .composer-wrap {
+  display: none;
+}
+.management-page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 26px 34px 38px;
+}
+.page-path {
+  color: #94a0b2;
+  font-size: 14px;
+  margin: 0 0 22px 2px;
+}
+.page-path span { margin: 0 8px; }
+.page-path b { color: #526176; font-weight: 500; }
+.management-card {
+  background: #fff;
+  border: 1px solid #e8edf4;
+  border-radius: 14px;
+  box-shadow: 0 2px 7px rgb(29 54 92 / 5%);
+  padding: 26px;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+.management-heading,
+.feedback-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #233a5d;
+  margin-bottom: 22px;
+}
+.management-heading > .anticon,
+.feedback-heading > .anticon { color: #315fe9; font-size: 19px; }
+.management-heading strong,
+.feedback-heading strong { font-size: 18px; }
+.management-heading span,
+.feedback-heading span { color: #9ba6b6; font-size: 13px; }
+.settings-page .settings-grid { gap: 18px; }
+.settings-page .setting-card { min-height: 175px; padding: 22px; }
+.feedback-filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid #e8edf4;
+  padding-bottom: 20px;
+  margin-bottom: 18px;
+}
+.feedback-filters .ant-input-affix-wrapper { width: 260px; }
+.feedback-filters .ant-select { width: 145px; }
+.feedback-total { margin-left: auto; color: #9ba6b6; white-space: nowrap; }
+.feedback-pagination { display: flex; justify-content: flex-end; margin-top: 20px; }
+.review-detail { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 14px; padding-top: 10px; }
+.review-detail label { color: #67758a; font-weight: 600; }
+.review-detail > div { white-space: pre-wrap; line-height: 1.7; max-height: 180px; overflow: auto; }
+.review-answer { background: #f6f8fb; border-radius: 8px; padding: 10px 12px; }
+.setting-card {
+  min-height: 150px;
+  border: 1px solid #e3e9f2;
+  border-radius: 14px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  background: #fff;
+}
+.setting-card > .setting-content {
+  min-width: 0;
+}
+.setting-card h3 {
+  margin: 3px 0 5px;
+  font-size: 15px;
+}
+.setting-card p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.setting-actions {
+  grid-column: 3;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  align-self: center;
+}
+.setting-actions > .ant-btn {
+  color: #8b98aa;
+  font-size: 18px;
+  padding-inline: 4px;
+}
+.setting-actions > .ant-tag {
+  margin-inline-end: 0;
+}
+.setting-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  font-size: 20px;
+  grid-row: 1 / span 2;
+}
+.setting-icon.blue {
+  background: #edf4ff;
+  color: #3876e8;
+}
+.setting-icon.amber {
+  background: #fff6dc;
+  color: #cf8b17;
+}
+.setting-icon.violet {
+  background: #f3edff;
+  color: #8459d3;
+}
+.setting-icon.orange {
+  background: #fff0dd;
+  color: #da761f;
+}
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+}
+.settings-form label {
+  color: #293d5b;
+  font-size: 14px;
+  font-weight: 600;
+}
+.settings-form p {
+  color: #8b98aa;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 2px 0;
+}
+.settings-form-heading,
+.starter-question-row,
+.threshold-form > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.settings-form-heading {
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.starter-question-row .ant-input {
+  flex: 1;
+}
+.threshold-form > div span {
+  color: #77869a;
+}
