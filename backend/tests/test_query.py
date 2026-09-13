@@ -12,7 +12,7 @@ from app.query import (
     value_of,
 )
 from app.schema import metadata
-from app.semantic import DIMENSIONS, METRICS, Filter, Plan
+from app.semantic import DIMENSIONS, METRICS, Filter, MasterDataPlan, Plan
 from pydantic import ValidationError
 
 
@@ -124,6 +124,28 @@ def test_customer_contract_list_uses_controlled_grouping():
     )
     assert "ct.number" in sql and "ct.name" in sql
     assert params["f0_0"] == "明瀚教育科研集团0034"
+
+
+def test_salespeople_count_and_list_uses_master_table():
+    query = MasterDataPlan(query_kind="master_data", entity="salesperson", intent="count_and_list", limit=20)
+    sql, params = compile_plan(query)
+    assert "analytics.salespeople" in sql
+    assert "analytics.org_units" in sql
+    assert "COUNT(*) OVER" in sql
+    assert params["limit"] == 20
+
+
+def test_customer_count_can_filter_by_industry():
+    query = MasterDataPlan(query_kind="master_data", entity="customer", intent="count", filters=[Filter(dimension="industry", values=["教育科研"])])
+    sql, params = compile_plan(query)
+    assert "COUNT(*) AS total_count" in sql
+    assert "analytics.customers" in sql
+    assert params["f0_0"] == "教育科研"
+
+
+def test_master_data_rejects_unrelated_filter():
+    with pytest.raises(ValidationError):
+        MasterDataPlan(query_kind="master_data", entity="product_line", filters=[Filter(dimension="customer", values=["某客户"])])
 
 
 def test_highest_customer_receivable_plan_uses_controlled_grouping():

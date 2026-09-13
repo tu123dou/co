@@ -65,6 +65,9 @@ DIMENSION_ALIASES = {
     "month": ["月份", "按月", "月度"],
 }
 EXAMPLES = [
+    ("销售人员数量与清单", "有多少销售人员，列出20个。使用 master_data 查询，entity=salesperson，intent=count_and_list，limit=20，图表 table。"),
+    ("客户数量与清单", "有多少个客户或列出客户。使用 master_data 查询，entity=customer；按问题选择 count、list 或 count_and_list，默认清单20条。"),
+    ("基础资料查询", "产品、产品线、经营单元、行业的数量和清单使用 master_data 查询，不需要经营指标和时间范围。"),
     ("收入排名", "今年各经营单元确认收入排名。指标 revenue，维度 org_unit，按值降序。"),
     ("收入趋势", "华东区今年按月收入趋势。指标 revenue，筛选 region=华东，维度 month，折线图。"),
     ("同比", "今年收入与去年同期相比。指标 revenue，比较方式 yoy。"),

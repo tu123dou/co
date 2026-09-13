@@ -82,6 +82,9 @@ Metric = Literal[
     "attainment",
     "floor", "forecast", "outstanding_receivables", "overdue_receivables",
 ]
+MasterEntity = Literal[
+    "customer", "salesperson", "product", "product_line", "org_unit", "industry"
+]
 Dimension = Literal[
     "region",
     "city",
@@ -105,6 +108,7 @@ class Filter(BaseModel):
 class Plan(BaseModel):
     """自然语言与 SQL 之间经过严格校验的中间查询计划。"""
     model_config = ConfigDict(extra="forbid")
+    query_kind: Literal["metric"] = "metric"
     metric: Metric
     dimensions: list[Dimension] = Field(default_factory=list, max_length=2)
     filters: list[Filter] = Field(default_factory=list, max_length=8)
@@ -151,10 +155,37 @@ class Plan(BaseModel):
         return self
 
 
+class MasterDataPlan(BaseModel):
+    """客户、人员、产品等基础资料的数量和清单查询计划。"""
+    model_config = ConfigDict(extra="forbid")
+    query_kind: Literal["master_data"]
+    entity: MasterEntity
+    intent: Literal["count", "list", "count_and_list"] = "count_and_list"
+    filters: list[Filter] = Field(default_factory=list, max_length=4)
+    limit: int = Field(default=20, ge=1, le=100)
+    sort: Literal["asc", "desc"] = "asc"
+    chart: Literal["table"] = "table"
+
+    @model_validator(mode="after")
+    def supported_filters(self):
+        allowed = {
+            "customer": {"industry"},
+            "salesperson": {"region", "city", "org_unit"},
+            "product": {"product_line"},
+            "product_line": set(),
+            "org_unit": {"region", "city"},
+            "industry": set(),
+        }[self.entity]
+        invalid = {item.dimension for item in self.filters} - allowed
+        if invalid:
+            raise ValueError("该基础资料不支持这些筛选维度：" + "、".join(sorted(invalid)))
+        return self
+
+
 class Interpretation(BaseModel):
     model_config = ConfigDict(extra="forbid")
     action: Literal["query", "clarify", "unsupported"]
-    plan: Plan | None = None
+    plan: Plan | MasterDataPlan | None = None
     explanation: str = Field(max_length=800)
 
     @model_validator(mode="after")

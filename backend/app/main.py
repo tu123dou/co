@@ -20,7 +20,7 @@ from . import schema as s
 from .db import engine, query_engine
 from .auth import current_user, token_for, verify_password
 from .config import settings
-from .semantic import METRICS, DIMENSIONS
+from .semantic import METRICS, DIMENSIONS, MasterDataPlan
 from .query import compile_plan, execute_plan, render_business_sql, render_executable_sql
 from .llm import interpret, configured, call_model, ModelError
 from .retrieval import EmbeddingError, retrieve
@@ -618,6 +618,13 @@ def review_feedback(feedback_id: int, body: FeedbackReview, user: User):
 
 
 def summary(result, plan):
+    if isinstance(plan, MasterDataPlan):
+        name = {"customer": "客户", "salesperson": "销售人员", "product": "产品", "product_line": "产品线", "org_unit": "经营单元", "industry": "行业"}[plan.entity]
+        if result["empty"]:
+            return f"没有找到符合条件的{name}资料。"
+        if plan.intent == "count":
+            return f"符合条件的{name}共有 {result['total_count']:,} 个。"
+        return f"符合条件的{name}共有 {result['total_count']:,} 个，当前列出 {len(result['records'])} 个。"
     metric = METRICS[plan.metric]
     unit = metric["unit"]
 
@@ -694,6 +701,13 @@ CHART_LABELS = {"bar": "柱状图", "line": "折线图", "pie": "占比图", "ta
 
 def analysis_intro(question, explanation, plan, dataset):
     """生成查询执行前已经确定的数据源和结构化解析步骤。"""
+    if isinstance(plan, MasterDataPlan):
+        name, table = {"customer": ("客户", "analytics.customers"), "salesperson": ("销售人员", "analytics.salespeople"), "product": ("产品", "analytics.products"), "product_line": ("产品线", "analytics.product_lines"), "org_unit": ("经营单元", "analytics.org_units"), "industry": ("行业", "analytics.industries")}[plan.entity]
+        filters = [f"{DIMENSION_LABELS[f.dimension]}={'、'.join(f.values)}" for f in plan.filters]
+        return [
+            {"key": "source", "title": "选择数据表与数据时效", "status": "complete", "items": [f"选用数据源：{name}基础资料（{table}）", "数据时效：当前基础资料快照", f"业务口径：每行代表一个{name}对象"]},
+            {"key": "plan", "title": "解析与计算逻辑", "status": "complete", "items": [f"问题：{question}", f"解析结果：{explanation}", f"查询对象：{name}；查询方式：{plan.intent}", "筛选条件：" + ("；".join(filters) if filters else "全部"), f"最多展示 {plan.limit} 条"]},
+        ]
     sources = []
     for fact in METRICS[plan.metric]["facts"]:
         for source in SOURCE_LABELS[fact]:
@@ -750,11 +764,10 @@ def analysis_sql_step(executions):
 
 def analysis_process(question, explanation, plan, result, dataset):
     """根据真实计划和执行结果生成前端可展示、可审计的五步过程。"""
-    preview = [
-        f"{row['label']}：{row['value']:,.2f}{METRICS[plan.metric]['unit']}"
-        for row in result["rows"][:5]
-        if row["value"] is not None
-    ]
+    if isinstance(plan, MasterDataPlan):
+        preview = ["、".join(str(value) for value in row.values() if value is not None) for row in result["records"][:5]]
+    else:
+        preview = [f"{row['label']}：{row['value']:,.2f}{METRICS[plan.metric]['unit']}" for row in result["rows"][:5] if row["value"] is not None]
     return [
         *analysis_intro(question, explanation, plan, dataset),
         analysis_sql_step(result["executions"]),
@@ -763,8 +776,8 @@ def analysis_process(question, explanation, plan, result, dataset):
             "title": "展示取数结果",
             "status": "complete",
             "items": [
-                f"汇总结果：{result['total']:,.2f}{METRICS[plan.metric]['unit']}" if result["total"] is not None else "汇总结果：暂无可计算数据",
-                "前五项：" + ("；".join(preview) if preview else "无明细分组"),
+                (f"资料总数：{result['total_count']:,} 条" if isinstance(plan, MasterDataPlan) else (f"汇总结果：{result['total']:,.2f}{METRICS[plan.metric]['unit']}" if result["total"] is not None else "汇总结果：暂无可计算数据")),
+                "前五项：" + ("；".join(preview) if preview else "无明细记录"),
                 "预览方式：" + CHART_LABELS[plan.chart],
             ],
         },
@@ -1043,7 +1056,7 @@ async def ask(cid: str, body: Question, user: User):
                     {
                         "status": status,
                         "plan": plan.model_dump(mode="json"),
-                        "metric": METRICS[plan.metric],
+                        "metric": ({"name": {"customer": "客户", "salesperson": "销售人员", "product": "产品", "product_line": "产品线", "org_unit": "经营单元", "industry": "行业"}[plan.entity], "unit": "个", "definition": "基础资料对象数量"} if isinstance(plan, MasterDataPlan) else METRICS[plan.metric]),
                         "dataset_version": dataset["version"],
                         "cutoff_date": str(dataset["cutoff_date"]),
                         "model": selected_model,
@@ -1051,7 +1064,7 @@ async def ask(cid: str, body: Question, user: User):
                         "completed_at": completed_at,
                         "usage": usage,
                         "analysis_process": complete_process,
-                        "suggestions": [
+                        "suggestions": (["查看前50个", "按名称排序", "查看其他基础资料"] if isinstance(plan, MasterDataPlan) else [
                             "只看上海" if plan.filters else "只看华东区",
                             "换成按区域展示"
                             if "month" in plan.dimensions
@@ -1059,7 +1072,7 @@ async def ask(cid: str, body: Question, user: User):
                             "查看同一范围的毛利率"
                             if plan.comparison != "none"
                             else "与去年同期相比",
-                        ]
+                        ])
                         if user_preferences["suggestions_enabled"]
                         else [],
                     }
@@ -1136,6 +1149,16 @@ def export(mid: str, user: User):
     out.write("\ufeff")
     writer = csv.writer(out)
     result = msg["result"]
+    if result.get("plan", {}).get("query_kind") == "master_data":
+        columns = result["record_columns"]
+        writer.writerow([column["title"] for column in columns])
+        for record in result["records"]:
+            values = []
+            for column in columns:
+                value = str(record.get(column["key"]) or "")
+                values.append("'" + value if value.startswith(("=", "+", "-", "@", "\t", "\r")) else value)
+            writer.writerow(values)
+        return Response(out.getvalue(), media_type="text/csv;charset=utf-8", headers={"Content-Disposition": 'attachment; filename="master-data-result.csv"'})
     writer.writerow(
         [
             "分组",

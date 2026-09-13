@@ -12,7 +12,7 @@ import re
 import sqlglot
 from sqlglot import exp
 from sqlalchemy import text
-from .semantic import METRICS
+from .semantic import METRICS, MasterDataPlan
 from .config import settings
 
 FIELDS = {
@@ -84,12 +84,67 @@ def validate_sql(sql):
         "CAST",
         "AND",
         "OR",
+        "COUNT",
     }
     for f in tree.find_all(exp.Func):
         name = f.name.upper() if isinstance(f, exp.Anonymous) else f.sql_name().upper()
         if name not in allowed_funcs:
             raise ValueError("不允许的 SQL 函数: " + name)
     return sql
+
+
+# 主数据查询使用固定表、固定展示字段和有限的筛选映射，不允许模型提供物理字段。
+MASTER_DATA = {
+    "customer": {
+        "name": "客户", "source": "analytics.customers m LEFT JOIN analytics.industries i ON i.id=m.industry_id",
+        "columns": [("code", "客户编码", "m.code"), ("name", "客户名称", "m.name"), ("province", "省份", "m.province"), ("industry", "所属行业", "i.name")],
+        "filters": {"industry": "i.name"},
+    },
+    "salesperson": {
+        "name": "销售人员", "source": "analytics.salespeople m JOIN analytics.org_units o ON o.id=m.org_unit_id",
+        "columns": [("code", "人员编码", "m.code"), ("name", "销售人员", "m.name"), ("org_unit", "所属经营单元", "o.name"), ("region", "区域", "o.region"), ("city", "城市", "o.city")],
+        "filters": {"org_unit": "o.name", "region": "o.region", "city": "o.city"},
+    },
+    "product": {
+        "name": "产品", "source": "analytics.products m JOIN analytics.product_lines p ON p.id=m.product_line_id",
+        "columns": [("code", "产品编码", "m.code"), ("name", "产品名称", "m.name"), ("model", "产品型号", "m.model"), ("product_line", "所属产品线", "p.name")],
+        "filters": {"product_line": "p.name"},
+    },
+    "product_line": {
+        "name": "产品线", "source": "analytics.product_lines m",
+        "columns": [("code", "产品线编码", "m.code"), ("name", "产品线名称", "m.name")], "filters": {},
+    },
+    "org_unit": {
+        "name": "经营单元", "source": "analytics.org_units m",
+        "columns": [("code", "经营单元编码", "m.code"), ("name", "经营单元", "m.name"), ("unit_type", "类型", "m.unit_type"), ("region", "区域", "m.region"), ("city", "城市", "m.city")],
+        "filters": {"region": "m.region", "city": "m.city"},
+    },
+    "industry": {
+        "name": "行业", "source": "analytics.industries m",
+        "columns": [("code", "行业编码", "m.code"), ("name", "行业名称", "m.name")], "filters": {},
+    },
+}
+
+
+def compile_master_data_plan(plan):
+    spec = MASTER_DATA[plan.entity]
+    params = {"limit": plan.limit}
+    where = []
+    for n, item in enumerate(plan.filters):
+        placeholders = []
+        for k, value in enumerate(item.values):
+            key = f"f{n}_{k}"
+            params[key] = value
+            placeholders.append(":" + key)
+        where.append(f"{spec['filters'][item.dimension]} IN ({', '.join(placeholders)})")
+    condition = " WHERE " + " AND ".join(where) if where else ""
+    if plan.intent == "count":
+        sql = f"SELECT COUNT(*) AS total_count FROM {spec['source']}{condition}"
+    else:
+        selected = ", ".join(f"{field} AS {key}" for key, _, field in spec["columns"])
+        direction = "ASC" if plan.sort == "asc" else "DESC"
+        sql = f"SELECT {selected}, COUNT(*) OVER() AS total_count FROM {spec['source']}{condition} ORDER BY m.code {direction} LIMIT :limit"
+    return validate_sql(sql), params
 
 
 def fact_sql(fact, plan, params):
@@ -192,6 +247,8 @@ def fact_sql(fact, plan, params):
 
 def compile_plan(plan):
     """编译已校验的计划；用户和模型给出的值始终通过参数绑定。"""
+    if isinstance(plan, MasterDataPlan):
+        return compile_master_data_plan(plan)
     params = {"start_date": plan.start_date, "end_date": plan.end_date}
     unions = " UNION ALL ".join(
         fact_sql(f, plan, params) for f in METRICS[plan.metric]["facts"]
@@ -248,6 +305,22 @@ BUSINESS_DIMENSIONS = {
 
 def render_business_sql(plan):
     """生成帮助业务人员理解口径的中文 SQL；该文本仅用于解释。"""
+    if isinstance(plan, MasterDataPlan):
+        spec = MASTER_DATA[plan.entity]
+        fields = ", ".join(label for _, label, _ in spec["columns"])
+        conditions = []
+        for item in plan.filters:
+            values = ", ".join("'" + value.replace("'", "''") + "'" for value in item.values)
+            conditions.append(f"{BUSINESS_DIMENSIONS[item.dimension]} IN ({values})")
+        if plan.intent == "count":
+            lines = [f"SELECT COUNT(*) AS {spec['name']}数量", f"FROM {spec['name']}基础资料"]
+        else:
+            lines = [f"SELECT {fields}, COUNT(*) OVER() AS {spec['name']}总数", f"FROM {spec['name']}基础资料"]
+        if conditions:
+            lines.append("WHERE " + " AND ".join(conditions))
+        if plan.intent != "count":
+            lines.extend([f"ORDER BY {spec['name']}编码 {'ASC' if plan.sort == 'asc' else 'DESC'}", f"LIMIT {plan.limit}"])
+        return "\n".join(lines) + ";"
     if plan.metric in {"gross_profit", "gross_margin"}:
         source, date_field = "收入确认流水 JOIN 成本确认流水 JOIN 合同明细 JOIN 合同台账", "确认日期"
         expression = "SUM(确认收入)-SUM(直接成本)"
@@ -323,6 +396,24 @@ def value_of(row, metric):
 
 def execute_plan(plan, query_engine, cutoff, start):
     """只读执行当前期和对比期计划，并整理为接口需要的结果结构。"""
+    if isinstance(plan, MasterDataPlan):
+        sql, params = compile_plan(plan)
+        with query_engine.connect() as conn:
+            with conn.begin():
+                conn.execute(text("SET TRANSACTION READ ONLY"))
+                conn.execute(text("SELECT set_config('statement_timeout', :timeout, true)"), {"timeout": str(settings().query_timeout_ms)})
+                records = [dict(row) for row in conn.execute(text(sql), params).mappings()]
+        total_count = int(records[0].pop("total_count")) if records else 0
+        if plan.intent == "count":
+            records = []
+        spec = MASTER_DATA[plan.entity]
+        execution = {"sql": sql, "executable_sql": render_executable_sql(sql, params), "business_sql": render_business_sql(plan), "parameters": {k: str(v) for k, v in params.items()}}
+        return {
+            "records": records, "record_columns": [{"key": key, "title": title} for key, title, _ in spec["columns"]],
+            "total_count": total_count, "rows": [], "group_count": total_count,
+            "truncated": plan.intent != "count" and total_count > len(records), "empty": total_count == 0,
+            "executions": [execution], "previous_total": None, "comparison_range": None,
+        }
     if plan.start_date < start or plan.end_date > cutoff:
         raise ValueError(f"数据覆盖 {start} 至 {cutoff}，请调整查询时间")
     if plan.comparison != "none":

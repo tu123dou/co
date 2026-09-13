@@ -110,6 +110,7 @@ async def interpret(
 收入下降原因可按单一维度比较拆解，但只说明数据贡献，不捏造业务原因。
 目标达成率仅支持整月时间段及已允许的维度。回款额不能按产品线分组或筛选。
 保底和滚动预测来自月度经营预测。未回款和逾期应收来自合同应收计划，不能按产品线拆分。当前不提供商机、PPL管道或项目风险查询；遇到此类问题返回unsupported。
+客户、销售人员、产品、产品线、经营单元、行业的数量或基础资料清单属于 master_data 查询，必须使用 query_kind=master_data，不得用经营指标间接替代。entity 使用对应英文对象；“有多少”用 intent=count，“列出/有哪些”用 list，同时问数量和清单用 count_and_list。未指定条数时 limit=20，用户指定条数按要求填写，最多100；chart固定table。客户可按行业筛选，销售人员可按区域、城市或经营单元筛选，产品可按产品线筛选，经营单元可按区域或城市筛选。主数据查询没有日期字段，不添加时间条件。
 “某客户签约了哪些合同”“合同清单”等合同级列表可以查询：metric=signed，dimensions必须包含contract，按customer筛选，chart=table。contract标签由合同编号和合同名称组成；这不是逐笔财务流水。合同清单未指定时间时使用数据集完整起止日期，不使用默认年累计。
 “哪一笔应收计划逾期应收最高”“单笔应收”“应收明细”等受控应收计划查询可以查询：metric只能是outstanding_receivables或overdue_receivables，dimensions必须包含receivable_plan，按customer等明确条件筛选，chart=table。“最高一笔”使用sort=desc、limit=1。receivable_plan标签包含合同编号、合同名称、到期日和计划标识。未指定时间时使用数据集完整起止日期，不使用默认年累计。
 默认时间是截止日所在年累计，默认limit=20。explanation用简短中文说明已解析的查询或需澄清的问题。

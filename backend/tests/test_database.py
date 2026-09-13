@@ -6,7 +6,7 @@ from datetime import date
 import pytest
 from app.db import engine, query_engine
 from app.query import execute_plan
-from app.semantic import Plan
+from app.semantic import MasterDataPlan, Plan
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 
@@ -193,6 +193,18 @@ def test_analyst_denied(sql):
 def test_empty_and_zero_baseline():
     r = run(start_date="2024-01-01", end_date="2024-01-31")
     assert r["empty"] and r["total"] == 0
+
+
+def test_master_data_returns_exact_total_and_limited_salespeople():
+    result = execute_plan(
+        MasterDataPlan(query_kind="master_data", entity="salesperson", intent="count_and_list", limit=20),
+        query_engine,
+        date(2026, 8, 31),
+        date(2024, 1, 1),
+    )
+    assert result["total_count"] == scalar("SELECT count(*) FROM analytics.salespeople")
+    assert len(result["records"]) == 20
+    assert result["record_columns"][1]["title"] == "销售人员"
 
 
 def test_month_filter_applies_to_previous_year():

@@ -100,7 +100,8 @@ export default function Answer({
         </div>
       </div>
     );
-  const comparison = r.plan.comparison !== "none";
+  const masterData = r.plan.query_kind === "master_data";
+  const comparison = !masterData && r.plan.comparison !== "none";
   const unit = r.metric.unit;
   const process = r.analysis_process || [];
   const responseTime = r.completed_at || msg.created_at;
@@ -109,7 +110,13 @@ export default function Answer({
     !comparison &&
     r.rows.every((row: Row) => (row.value ?? 0) >= 0) &&
     r.rows.length > 1;
-  const columns: any[] = [
+  const columns: any[] = masterData
+    ? r.record_columns.map((column: any) => ({
+        title: column.title,
+        dataIndex: column.key,
+        key: column.key,
+      }))
+    : [
     {
       title: "分组",
       dataIndex: "label",
@@ -186,11 +193,11 @@ export default function Answer({
           <div className="result-heading">
             <div>
               <span className="card-eyebrow">
-                {r.plan.start_date} — {r.plan.end_date}
+                {masterData ? "当前基础资料快照" : `${r.plan.start_date} — ${r.plan.end_date}`}
               </span>
               <h3>
                 {r.metric.name}
-                {r.plan.dimensions.length
+                {!masterData && r.plan.dimensions.length
                   ? " · " +
                     r.plan.dimensions
                       .map(
@@ -218,8 +225,8 @@ export default function Answer({
             <div>
               <span>{r.metric.name} · 全部符合条件数据</span>
               <b>
-                {format(r.total, unit)}
-                <small>{unit === "元" ? "元" : ""}</small>
+                {masterData ? r.total_count.toLocaleString("zh-CN") : format(r.total, unit)}
+                <small>{masterData ? "个" : unit === "元" ? "元" : ""}</small>
               </b>
             </div>
             {comparison && (
@@ -258,7 +265,7 @@ export default function Answer({
               </>
             )}
           </div>
-          <div className="chart-toolbar">
+          {!masterData && <div className="chart-toolbar">
             <Segmented
               value={tab}
               onChange={(v) => setTab(String(v))}
@@ -285,9 +292,20 @@ export default function Answer({
                 aria-label="导出 CSV"
               />
             </Tooltip>
-          </div>
+          </div>}
           {r.empty ? (
             <Empty description="当前范围没有业务记录" />
+          ) : masterData ? (
+            r.records.length ? (
+              <Table
+                rowKey={(record: any) => record.code || record.name}
+                size="small"
+                dataSource={r.records}
+                columns={columns}
+                pagination={r.records.length > 10 ? { pageSize: 10, showSizeChanger: false } : false}
+                scroll={{ x: 650 }}
+              />
+            ) : null
           ) : tab === "table" ? (
             <Table
               rowKey="label"
@@ -310,11 +328,11 @@ export default function Answer({
             />
           )}
           <div className="result-foot">
-            <SafetyCertificateOutlined /> 数据截止 {r.cutoff_date}
+            <SafetyCertificateOutlined /> {masterData ? "基础资料实时查询" : `数据截止 ${r.cutoff_date}`}
             {r.truncated && (
               <span>
                 {" "}
-                · 展示 {r.rows.length} / {r.group_count} 组
+                · 展示 {masterData ? r.records.length : r.rows.length} / {r.group_count} {masterData ? "条" : "组"}
               </span>
             )}
           </div>
