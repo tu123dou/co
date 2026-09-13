@@ -1,4 +1,4 @@
-import { Button, Empty, Popconfirm, Popover, Tabs, Tag, Tooltip } from "antd";
+import { Button, Empty, Popconfirm, Popover, Tabs, Tag } from "antd";
 import { DeleteOutlined, StarFilled, ThunderboltOutlined } from "@ant-design/icons";
 import type { CommonQuestion } from "./workbenchConfig";
 
@@ -35,14 +35,12 @@ export default function QuickQuestions({
               {row.success_count != null && <Tag>{row.success_count} 次</Tag>}
             </button>
             <Popconfirm title={removeTitle} onConfirm={() => remove(row.id)}>
-              <Tooltip title={removeTitle}>
-                <Button
-                  type="text"
-                  size="small"
-                  icon={row.success_count == null ? <StarFilled /> : <DeleteOutlined />}
-                  aria-label={removeTitle}
-                />
-              </Tooltip>
+              <Button
+                type="text"
+                size="small"
+                icon={row.success_count == null ? <StarFilled /> : <DeleteOutlined />}
+                aria-label={removeTitle}
+              />
             </Popconfirm>
           </div>
         ))}
