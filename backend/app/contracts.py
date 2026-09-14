@@ -7,9 +7,10 @@ from typing import Literal, NotRequired, TypedDict
 from pydantic import JsonValue
 
 from .semantic import MasterDataPlan, Plan
+from .model_connections import ModelConnection
 
 QueryPlan = Plan | MasterDataPlan
-RunStatus = Literal["success", "clarify", "unsupported", "error", "cancelled"]
+RunStatus = Literal["success", "clarify", "unsupported", "error", "cancelled", "info"]
 
 
 class DatasetInfo(TypedDict):
@@ -94,6 +95,7 @@ class QueryResult(TypedDict, total=False):
     usage: dict[str, int]
     analysis_process: list[AnalysisStep]
     suggestions: list[str]
+    source_label: str
 
 
 class HistoryMessage(TypedDict):
@@ -136,6 +138,7 @@ class AskContext:
     suggestions_enabled: bool
     previous_plan: dict[str, JsonValue]
     history: list[HistoryMessage]
+    model_connection: ModelConnection | None = field(default=None, repr=False)
 
 
 @dataclass
@@ -154,7 +157,7 @@ class QueryRun:
 
     def message(self) -> AssistantMessage:
         # 失败/取消不能携带先前生成的成功状态或半成品图表；审计仍保留执行信息。
-        if self.status == "success":
+        if self.status in {"success", "info"}:
             result: QueryResult = {**self.result, "status": self.status}
         elif self.status in {"clarify", "unsupported"}:
             result = {"status": self.status}

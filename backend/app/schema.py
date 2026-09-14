@@ -262,6 +262,8 @@ user_workbench_settings = table(
     C("common_questions_enabled", Boolean, nullable=False, server_default="true"),
     C("common_question_threshold", I, nullable=False, server_default="3"),
     C("llm_model", S(100), nullable=False),
+    C("custom_model_id", S(36)),
+    C("custom_models", JSONB, nullable=False, server_default="[]"),
     C("updated_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
     CheckConstraint(
         "common_question_threshold BETWEEN 1 AND 100",

@@ -48,6 +48,7 @@
 ## 4. 问数与 SQL 安全
 
 - 模型只生成受约束的查询计划，SQL 必须由程序编译。
+- 助手和业务数据说明使用受约束的 `InformationRequest` 与 `info` 终态，由程序从可信目录生成；表范围必须取 `analytics` 目录和查询白名单交集，不输出应用表、未知表名或模型自由编写的事实。常见问句仅作完整匹配，不截获经营数值查询。说明回答保存历史与审计，不覆盖成功查询上下文、不伪装 SQL 结果；日期取当前数据版本，并区分全局覆盖范围与单表实际记录范围。
 - 所有筛选值使用绑定参数，不拼接用户输入。
 - 保持 SQLGlot AST 校验、允许表/schema/函数限制和单条 SELECT 限制。
 - 查询使用 analyst 只读连接、READ ONLY 事务、statement timeout 和结果上限。
@@ -91,6 +92,8 @@
 - 日志不得包含密码、Cookie、完整 token、API Key 或不必要的用户敏感内容。
 
 ## 8. 验证流程
+
+- 新增或调整依赖时，同时更新 `backend/requirements.txt` 与 Docker 实际使用的 `backend/requirements.lock`（包含传递依赖）。仅在本机虚拟环境安装成功不代表容器可用；必须重建后端镜像，运行 `pip check` 并验证 Compose 健康检查。
 
 - `tests/unit/`：纯计算、服务状态、线程边界、清理失败与无需数据库的 HTTP 行为；不调用真实模型。
 - `tests/integration/`：经确认的本地 PostgreSQL、账号隔离、SQL 权限、金额独立核对、历史结果和真实 HTTP 断连。仅在 `TEST_DATABASE=1` 时启用。

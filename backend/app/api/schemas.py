@@ -1,6 +1,7 @@
 """HTTP 请求模型；不向业务服务传递 Request 或 Depends 对象。"""
 
-from pydantic import BaseModel, Field, field_validator
+from typing import Literal
+from pydantic import BaseModel, Field, SecretStr, field_validator
 
 from ..user_settings import ALLOWED_LLM_MODELS
 
@@ -14,8 +15,37 @@ class SpeechRequest(BaseModel):
     text: str = Field(min_length=1, max_length=3000)
 
 
+class CustomModelCreate(BaseModel):
+    full_url: bool = True
+    request_url: str = Field(min_length=1, max_length=1000)
+    api_format: Literal["openai", "anthropic"]
+    display_name: str = Field(default="", max_length=100)
+    api_key: SecretStr = Field(min_length=1, max_length=4096)
+    model_name: str = Field(min_length=1, max_length=100)
+
+    @field_validator("request_url", "model_name", "display_name", mode="before")
+    @classmethod
+    def trim_text(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("api_key")
+    @classmethod
+    def clean_key(cls, value):
+        if value is None:
+            return None
+        key = value.get_secret_value().strip()
+        if not key or not key.isascii() or any(c.isspace() or ord(c) < 32 for c in key):
+            raise ValueError("API Key 不能为空或包含空白字符")
+        return SecretStr(key)
+
+
+class CustomModelEdit(CustomModelCreate):
+    api_key: SecretStr | None = Field(default=None, min_length=1, max_length=4096)
+
+
 class ModelTest(BaseModel):
     model: str | None = None
+    custom_model_id: str | None = Field(default=None, min_length=36, max_length=36)
 
     @field_validator("model")
     @classmethod
@@ -49,6 +79,7 @@ class WorkbenchSettingsEdit(BaseModel):
     common_questions_enabled: bool | None = None
     common_question_threshold: int | None = Field(default=None, ge=1, le=100)
     llm_model: str | None = None
+    custom_model_id: str | None = Field(default=None, min_length=36, max_length=36)
 
     @field_validator("welcome_title", "welcome_message")
     @classmethod

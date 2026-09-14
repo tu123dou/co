@@ -28,7 +28,10 @@ export default function AssistantMessage({
   onFeedback: (messageId: string) => void;
 }) {
   const speech = useSpeechPlayer(message.content);
-  const result = message.result?.status === "success" ? message.result : null;
+  const result =
+    message.result?.status === "success" || message.result?.status === "info"
+      ? message.result
+      : null;
 
   if (!result) {
     const failed = message.result?.status === "error";
@@ -81,12 +84,12 @@ export default function AssistantMessage({
           <strong>经管之星</strong>
           <span>AI 问数助手</span>
           <span className={styles["ask-answer__verified"]}>
-            <CheckCircleOutlined /> 已核对取数
+            <CheckCircleOutlined /> {result.status === "info" ? result.source_label : "已核对取数"}
           </span>
         </div>
         <AnalysisDetails steps={result.analysis_process ?? []} />
         <p className={styles["ask-answer__text"]}>{message.content}</p>
-        <ResultPanel messageId={message.id} result={result} />
+        {result.status === "success" && <ResultPanel messageId={message.id} result={result} />}
         <div className={styles["ask-answer__actions"]}>
           <div>
             <Tooltip title="复制结论">

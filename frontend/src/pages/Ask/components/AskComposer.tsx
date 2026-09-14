@@ -1,4 +1,6 @@
 import { Button, Input, Tooltip } from "antd";
+import type { RefObject } from "react";
+import type { TextAreaRef } from "antd/es/input/TextArea";
 import {
   ArrowUpOutlined,
   AudioOutlined,
@@ -12,6 +14,7 @@ import styles from "../AskPage.module.scss";
 import QuickQuestionPanel from "./QuickQuestionPanel";
 
 export default function AskComposer({
+  inputRef,
   draft,
   hasMessages,
   busy,
@@ -32,6 +35,7 @@ export default function AskComposer({
   onRemoveCommon,
   onRemoveFavorite,
 }: {
+  inputRef: RefObject<TextAreaRef | null>;
   draft: string;
   hasMessages: boolean;
   busy: boolean;
@@ -56,6 +60,7 @@ export default function AskComposer({
     <footer className={styles["ask-composer-wrap"]}>
       <div className={styles["ask-composer"]}>
         <Input.TextArea
+          ref={inputRef}
           value={draft}
           onChange={(event) => onDraft(event.target.value)}
           autoSize={{ minRows: 2, maxRows: 6 }}

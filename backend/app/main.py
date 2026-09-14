@@ -5,6 +5,8 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
 from sqlalchemy.exc import SQLAlchemyError
 
 from .api import ask, audio, auth, catalog, conversations, exports, feedback, workbench
@@ -18,6 +20,13 @@ from .errors import (
 )
 
 log = logging.getLogger("jingguan")
+
+
+async def validation_error(request, exc):
+    # Pydantic 的 input 字段可能携带整个提交对象，凭据接口不得回显校验输入。
+    if request.url.path == "/api/models" or request.url.path.startswith("/api/models/"):
+        return JSONResponse({"detail": "模型配置格式不正确，请检查必填项及长度"}, status_code=422)
+    return await request_validation_exception_handler(request, exc)
 
 
 async def origin_guard(request, call_next):
@@ -61,6 +70,7 @@ def create_app() -> FastAPI:
     )
     application.middleware("http")(origin_guard)
     application.add_exception_handler(SQLAlchemyError, db_error)
+    application.add_exception_handler(RequestValidationError, validation_error)
     for error in (
         ResourceNotFound,
         ServiceUnavailable,

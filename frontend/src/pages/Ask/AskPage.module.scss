@@ -211,11 +211,11 @@
   margin: 4px 0 28px;
   padding-left: 70px;
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 4px;
 }
-.ask-user-message > div {
+.ask-user-message__bubble {
   max-width: 78%;
   padding: 12px 17px;
   border-radius: 15px 15px 4px 15px;
@@ -231,6 +231,23 @@
 }
 .ask-user-message .is-favorite {
   color: #eaa62b;
+}
+.ask-user-message__actions {
+  display: flex;
+  gap: 8px;
+}
+.ask-user-message__actions :global(.ant-btn) {
+  width: 28px;
+  height: 28px;
+  font-size: 18px;
+}
+.ask-user-message__copy {
+  position: fixed;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 .ask-answer {
   margin-bottom: 30px;
@@ -347,6 +364,29 @@
   flex: 1;
   min-width: 0;
   padding-top: 6px;
+}
+.ask-progress__hint {
+  margin: 8px 0 0 28px;
+  color: #8b9db8;
+  font-size: 14px;
+  line-height: 1.7;
+  min-height: 24px;
+  animation: ask-hint-enter 0.35s ease;
+}
+@keyframes ask-hint-enter {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ask-progress__hint {
+    animation: none;
+  }
 }
 .ask-progress__title {
   min-height: 28px;
@@ -757,7 +797,7 @@
   .ask-user-message {
     padding-left: 24px;
   }
-  .ask-user-message > div {
+  .ask-user-message__bubble {
     max-width: 88%;
     font-size: 14px;
   }

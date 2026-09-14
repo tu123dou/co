@@ -1,9 +1,10 @@
-import type { AnalysisStep, QueryResult } from "../models/ask";
+import type { AnalysisStep, InformationResult, QueryResult } from "../models/ask";
 import { post, rawRequest, request } from "./client";
 import { readAskStream } from "./askStream";
 
 export type MessageResult =
   | QueryResult
+  | InformationResult
   | {
       status: "error" | "cancelled" | "clarify" | "unsupported";
       error_code?: string;

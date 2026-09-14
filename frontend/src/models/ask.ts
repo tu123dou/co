@@ -52,3 +52,14 @@ export type QueryResult = {
   analysis_process?: AnalysisStep[];
   suggestions?: string[];
 };
+
+export type InformationResult = {
+  status: "info";
+  source_label: string;
+  duration_ms: number;
+  completed_at: string;
+  dataset_version?: string;
+  usage?: { total_tokens?: number };
+  suggestions?: string[];
+  analysis_process?: AnalysisStep[];
+};

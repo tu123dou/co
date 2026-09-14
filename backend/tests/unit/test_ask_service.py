@@ -251,3 +251,22 @@ def test_presentation_failure_does_not_persist_success(workflow, monkeypatch):
     events = collect()
     assert events[-1]["message"] == workflow[0][0].message()
     assert workflow[0][0].status == "error"
+
+
+def test_information_does_not_call_models_or_execute_queries(workflow, monkeypatch):
+    async def forbidden(*args, **kwargs):
+        raise AssertionError("Metadata must not call external models")
+
+    monkeypatch.setattr(ask, "interpret", forbidden)
+    monkeypatch.setattr(ask, "retrieve", forbidden)
+
+    async def run():
+        async with ask.open_session("conversation", 1, "有多少个数据表") as session:
+            return [event async for event in session.stream()]
+
+    events = asyncio.run(run())
+    saved, locks, calls = workflow
+    assert events[-1]["message"] == saved[0].message()
+    assert saved[0].status == "info" and saved[0].plan is None
+    assert "execute" not in calls and "catalog" not in calls
+    assert locks[0].released

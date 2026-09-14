@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     llm_model: str = "qwen3.8-max"
     llm_api_key: str = ""
     llm_timeout: int = 90
+    model_encryption_secret: str = ""
     embedding_base_url: str = ""
     embedding_model: str = "qwen3.7-text-embedding-flash"
     embedding_api_key: str = ""

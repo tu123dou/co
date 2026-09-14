@@ -53,5 +53,5 @@ def test_selected_model_is_forwarded(monkeypatch):
         return "ok", {}
 
     monkeypatch.setattr(llm, "_call_once", once)
-    assert asyncio.run(llm.call_model([], model="glm-5.2"))[0] == "ok"
-    assert received == ["glm-5.2"]
+    assert asyncio.run(llm.call_model([], model="glm-5.1"))[0] == "ok"
+    assert received == ["glm-5.1"]

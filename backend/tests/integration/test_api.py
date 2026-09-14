@@ -147,9 +147,12 @@ def test_workbench_settings_are_user_scoped(clients):
         ).status_code
         == 422
     )
-    tested = a.post("/api/model/test", json={"model": "glm-5.2"})
+    tested = a.post("/api/model/test", json={"model": "glm-5.1"})
     assert tested.status_code == 200
-    assert tested.json()["model"] == "glm-5.2"
+    assert tested.json()["model"] == "glm-5.1"
+    assert a.post("/api/model/test", json={"model": "kimi-k2.6"}).status_code == 200
+    for removed in ("glm-5.2", "MiniMax-M2.5"):
+        assert a.patch("/api/workbench/settings", json={"llm_model": removed}).status_code == 422
 
 
 def test_common_questions_count_only_current_users_successes(clients):
@@ -186,6 +189,6 @@ def test_origin_and_catalog_do_not_expose_model_credentials(clients):
         "qwen3.8-flash",
         "qwen3.7-plus",
         "deepseek-v4-flash",
-        "glm-5.2",
-        "MiniMax-M2.5",
+        "glm-5.1",
+        "kimi-k2.6",
     ]

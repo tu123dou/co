@@ -135,6 +135,7 @@ export default function WorkspaceMenu(props: {
                     disabled={busy}
                   >
                     <Button
+                      className={styles.historyAction}
                       size="small"
                       type="text"
                       icon={<MoreOutlined />}

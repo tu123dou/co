@@ -175,7 +175,12 @@
 }
 .historyList {
   margin-top: 5px;
-  overflow: auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  // macOS 的浮动滚动条不占 gutter，额外留白避免覆盖操作按钮。
+  padding-inline-end: 16px;
 }
 
 .historyItem {
@@ -211,6 +216,12 @@
 .historyItem :global(.ant-btn) {
   opacity: 0;
   color: #7a8aa0;
+}
+.historyItem .historyAction {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
 }
 .historyItem:hover :global(.ant-btn),
 .historyItem:focus-within :global(.ant-btn),

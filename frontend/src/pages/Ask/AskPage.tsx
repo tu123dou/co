@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Spin, Tooltip } from "antd";
+import type { TextAreaRef } from "antd/es/input/TextArea";
 import { MessageOutlined } from "@ant-design/icons";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import type { WorkspaceOutletContext } from "../../layouts/WorkspaceLayout/WorkspaceLayout";
@@ -22,6 +23,7 @@ export default function AskPage() {
   const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(null);
   const [quickOpen, setQuickOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<TextAreaRef>(null);
   const voice = useVoiceRecorder((text) =>
     session.setDraft(session.draft.trim() ? `${session.draft.trim()} ${text}` : text),
   );
@@ -89,10 +91,13 @@ export default function AskPage() {
               favorites={resources.favorites}
               busy={session.busy}
               stage={session.stage}
-              liveAnalysis={session.liveAnalysis}
               endRef={endRef}
               onFavorite={resources.toggleFavorite}
               onAsk={(question) => void session.ask(question)}
+              onEdit={(question) => {
+                session.setDraft(question);
+                composerRef.current?.focus({ cursor: "end" });
+              }}
               onRetry={session.retry}
               onFeedback={setFeedbackMessageId}
             />
@@ -109,6 +114,7 @@ export default function AskPage() {
         </div>
       </main>
       <AskComposer
+        inputRef={composerRef}
         draft={session.draft}
         hasMessages={session.messages.length > 0}
         busy={session.busy}

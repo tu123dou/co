@@ -7,7 +7,10 @@ Plan，不能自行增加表名或字段名。Pydantic 会检查日期、筛选�
 
 from datetime import date
 from typing import Literal
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from .information import InformationRequest
 
 METRICS = {
     # facts 表示计算指标所需的基础事实。普通指标通常只有一个事实，毛利等派生指标
@@ -189,12 +192,17 @@ class MasterDataPlan(BaseModel):
 
 class Interpretation(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["query", "clarify", "unsupported"]
+    action: Literal["query", "clarify", "unsupported", "info"]
     plan: Plan | MasterDataPlan | None = None
     explanation: str = Field(max_length=800)
+    information: InformationRequest | None = None
 
     @model_validator(mode="after")
     def need_plan(self):
         if self.action == "query" and self.plan is None:
             raise ValueError("查询需要完整计划")
+        if self.action == "info" and (self.information is None or self.plan is not None):
+            raise ValueError("说明回答需要主题且不能携带经营查询计划")
+        if self.action != "info" and self.information is not None:
+            raise ValueError("说明主题只能用于说明回答")
         return self

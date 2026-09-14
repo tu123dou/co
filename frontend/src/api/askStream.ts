@@ -1,4 +1,4 @@
-import type { AnalysisStep, QueryResult } from "../models/ask";
+import type { AnalysisStep, InformationResult, QueryResult } from "../models/ask";
 import type { AskStreamEvent, ChatMessage } from "./conversations";
 
 const object = (value: unknown): value is Record<string, unknown> =>
@@ -87,6 +87,22 @@ function queryResult(value: Record<string, unknown>): value is QueryResult {
   );
 }
 
+function informationResult(value: Record<string, unknown>): value is InformationResult {
+  return (
+    value.status === "info" &&
+    typeof value.source_label === "string" &&
+    numeric(value.duration_ms) &&
+    typeof value.completed_at === "string" &&
+    (value.dataset_version === undefined || typeof value.dataset_version === "string") &&
+    (value.usage === undefined ||
+      (object(value.usage) &&
+        (value.usage.total_tokens === undefined || numeric(value.usage.total_tokens)))) &&
+    (value.suggestions === undefined || strings(value.suggestions)) &&
+    (value.analysis_process === undefined ||
+      (Array.isArray(value.analysis_process) && value.analysis_process.every(analysisStep)))
+  );
+}
+
 function resultMessage(value: unknown): value is ChatMessage {
   if (
     !object(value) ||
@@ -97,6 +113,7 @@ function resultMessage(value: unknown): value is ChatMessage {
     !object(value.result)
   )
     return false;
+  if (value.result.status === "info") return informationResult(value.result);
   return value.result.status === "success"
     ? queryResult(value.result)
     : ["error", "cancelled", "clarify", "unsupported"].includes(String(value.result.status)) &&

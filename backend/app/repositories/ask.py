@@ -9,12 +9,14 @@ from ..contracts import AskContext, QueryRun
 from ..db import engine
 from ..user_settings import ensure_user_settings, record_successful_question
 from .conversations import owned
+from .models import connection_for
 
 
 def prepare_question(cid: str, uid: int, question: str) -> AskContext:
     with engine.begin() as conn:
         convo = owned(cid, uid, conn)
         preferences = ensure_user_settings(conn, uid)
+        model_connection = connection_for(preferences, uid)
         history = [
             {"role": row["role"], "content": row["content"]}
             for row in conn.execute(
@@ -48,6 +50,7 @@ def prepare_question(cid: str, uid: int, question: str) -> AskContext:
         preferences["suggestions_enabled"],
         convo["context"],
         history,
+        model_connection,
     )
 
 

@@ -20,6 +20,7 @@ from ..contracts import (
     StreamEvent,
 )
 from ..db import query_engine
+from ..information import InformationRequest, recognize_information
 from ..llm import ModelError, interpret
 from ..presentation.answers import (
     analysis_intro,
@@ -28,6 +29,7 @@ from ..presentation.answers import (
     answer_metadata,
     summary,
 )
+from ..presentation.information import information_answer
 from ..query import (
     compile_plan,
     execute_plan,
@@ -115,7 +117,33 @@ class AskSession:
                 self.run.message_id,
             )
 
+    async def inform(self, request: InformationRequest) -> AsyncIterator[StreamEvent]:
+        yield status_event(stage="整理说明", detail="根据业务目录与数据版本生成回答")
+        dataset = None
+        if "date_range" in request.topics:
+            dataset = await run_in_threadpool(dataset_info)
+            self.run.dataset_version = dataset["version"]
+        self.run.content = information_answer(request, dataset)
+        self.run.status = "info"
+        self.run.result = {
+            "status": "info",
+            "source_label": "助手与业务数据说明",
+            "duration_ms": round((time.monotonic() - self.started) * 1000),
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "usage": self.run.usage,
+            "suggestions": ["有哪些业务表", "数据日期范围", "支持哪些指标"]
+            if self.context.suggestions_enabled
+            else [],
+        }
+        if dataset is not None:
+            self.run.result["dataset_version"] = dataset["version"]
+
     async def execute(self) -> AsyncIterator[StreamEvent]:
+        information = recognize_information(self.context.question)
+        if information is not None:
+            async for event in self.inform(information):
+                yield event
+            return
         yield status_event(stage="理解问题", detail="识别指标、时间与筛选条件")
         yield analysis_event(
             step={
@@ -194,8 +222,14 @@ class AskSession:
             {k: str(dataset[k]) for k in ["version", "start_date", "cutoff_date"]},
             semantic_context,
             model=self.context.model,
+            **({"connection": self.context.model_connection} if self.context.model_connection else {}),
         )
-        if interpretation.action != "query":
+        if interpretation.action == "info":
+            if interpretation.information is None:
+                raise ValueError("说明回答需要主题")
+            async for event in self.inform(interpretation.information):
+                yield event
+        elif interpretation.action != "query":
             self.run.status = interpretation.action
             self.run.content = interpretation.explanation
             self.run.result = {"status": self.run.status}

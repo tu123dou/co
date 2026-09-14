@@ -194,6 +194,8 @@ TABLE_CATALOG = {
             "common_questions_enabled": "是否在快捷提问中显示当前用户的常见问题。",
             "common_question_threshold": "同一问题成功查询多少次后成为常见问题。",
             "llm_model": "当前用户选择的主大模型调用 ID。",
+            "custom_model_id": "当前选择的用户自定义模型标识；为空时使用内置模型。",
+            "custom_models": "用户自定义模型配置数组；API Key 仅保存认证加密密文，不对浏览器返回。",
             "updated_at": "设置最后更新时间，包含时区。",
         },
     },

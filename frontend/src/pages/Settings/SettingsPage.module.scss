@@ -3,11 +3,6 @@
   color: #8897ac;
   line-height: 1.8;
 }
-.settings hr {
-  border: 0;
-  border-top: 1px solid #e9eef6;
-  margin: 28px 0;
-}
 .settings h3 {
   font-size: 16px;
 }
@@ -86,6 +81,62 @@
   flex-direction: column;
   gap: 10px;
   padding-top: 8px;
+}
+.modelSelect {
+  width: 100%;
+}
+.urlModeRow,
+.modelOption,
+.modelOptionActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.urlModeRow,
+.modelOption {
+  justify-content: space-between;
+}
+.urlModeRow {
+  margin-bottom: 12px;
+}
+.modelOption > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.modelOptionActions {
+  flex-shrink: 0;
+}
+.maskedKey :global(input) {
+  -webkit-text-security: disc;
+}
+.addModelButton {
+  align-self: flex-start;
+  padding-inline: 0;
+}
+.addModelDialog :global(.ant-modal-body) {
+  padding-top: 24px;
+  max-height: calc(100dvh - 220px);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.addModelDialog :global(.ant-form-item-label) > label {
+  font-weight: 600;
+}
+.modelDialogFooter,
+.modelDialogFooter > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.modelDialogFooter {
+  justify-content: space-between;
+  padding-top: 18px;
+}
+.modelSecurityNote {
+  color: #8897ac;
+  font-size: 12px;
+  line-height: 1.7;
 }
 .settingsForm label {
   color: #293d5b;

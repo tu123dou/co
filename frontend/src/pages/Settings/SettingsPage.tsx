@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
-import { Alert, Button, Input, InputNumber, Modal, Select, Spin, Switch, Tag, message } from "antd";
+import {
+  Alert,
+  Button,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+  Spin,
+  Switch,
+  Tag,
+  message as antdMessage,
+} from "antd";
 import {
   CheckOutlined,
   CommentOutlined,
@@ -11,9 +22,11 @@ import {
   SettingOutlined,
   UnorderedListOutlined,
 } from "@ant-design/icons";
-import type { AskSettings } from "../../api/workbench";
+import type { AskSettings, CustomModel } from "../../api/workbench";
+import AddModelDialog from "./AddModelDialog";
 import {
   getCatalog,
+  deleteCustomModel,
   getWorkbenchSettings,
   testModel,
   updateWorkbenchSettings,
@@ -26,6 +39,9 @@ type ModalName = "welcome" | "common" | "model" | "";
 function SettingsPanel({
   settings,
   models,
+  customModels,
+  onModelAdded,
+  onModelDeleted,
   modelConfigured,
   testing,
   onTest,
@@ -33,25 +49,35 @@ function SettingsPanel({
 }: {
   settings: AskSettings;
   models: string[];
+  customModels: CustomModel[];
+  onModelAdded: (model: CustomModel) => void;
+  onModelDeleted: (id: string, settings: AskSettings) => void;
   modelConfigured: boolean;
   testing: boolean;
-  onTest: (model: string) => Promise<void>;
+  onTest: (model: string, customModelId?: string) => Promise<void>;
   onSave: (values: Partial<AskSettings>) => Promise<void>;
 }) {
+  const [message, contextHolder] = antdMessage.useMessage();
   const [modal, setModal] = useState<ModalName>(""),
     [saving, setSaving] = useState(false),
     [welcomeTitle, setWelcomeTitle] = useState(settings.welcome_title),
     [welcomeMessage, setWelcomeMessage] = useState(settings.welcome_message),
     [starterQuestions, setStarterQuestions] = useState<string[]>(settings.starter_questions),
     [threshold, setThreshold] = useState(settings.common_question_threshold),
-    [model, setModel] = useState(settings.llm_model);
+    [model, setModel] = useState(settings.custom_model_id ?? settings.llm_model);
+  const [addingModel, setAddingModel] = useState(false);
+  const [modelListOpen, setModelListOpen] = useState(false);
+  const [editingModel, setEditingModel] = useState<CustomModel>();
+  const [deletingModel, setDeletingModel] = useState<CustomModel>();
+  const [deleting, setDeleting] = useState(false);
+  const selectedCustomModel = customModels.find((item) => item.id === model);
 
   useEffect(() => {
     setWelcomeTitle(settings.welcome_title);
     setWelcomeMessage(settings.welcome_message);
     setStarterQuestions(settings.starter_questions);
     setThreshold(settings.common_question_threshold);
-    setModel(settings.llm_model);
+    setModel(settings.custom_model_id ?? settings.llm_model);
   }, [settings]);
 
   const save = async (values: Partial<AskSettings>) => {
@@ -81,12 +107,13 @@ function SettingsPanel({
     setWelcomeMessage(settings.welcome_message);
     setStarterQuestions(settings.starter_questions);
     setThreshold(settings.common_question_threshold);
-    setModel(settings.llm_model);
+    setModel(settings.custom_model_id ?? settings.llm_model);
     setModal(name);
   };
 
   return (
     <div className={styles.settings}>
+      {contextHolder}
       <div className={styles.settingsGrid}>
         <div className={styles.settingCard}>
           <span className={`${styles.settingIcon} ${styles.blue}`}>
@@ -139,8 +166,8 @@ function SettingsPanel({
               onClick={() => openModal("model")}
               aria-label="配置模型"
             />
-            <Tag color={modelConfigured ? "green" : "orange"}>
-              {modelConfigured ? "已连接" : "未配置"}
+            <Tag color={modelConfigured || settings.custom_model_id ? "green" : "orange"}>
+              {modelConfigured || settings.custom_model_id ? "已配置" : "未配置"}
             </Tag>
           </div>
         </div>
@@ -166,11 +193,6 @@ function SettingsPanel({
           </div>
         </div>
       </div>
-
-      <hr />
-      <h3>关于工作台</h3>
-      <p>经管之星 v0.1 · 本地部署</p>
-      <p>PostgreSQL 业务数据 · 只读问数查询</p>
 
       <Modal
         title="对话开场白"
@@ -272,9 +294,15 @@ function SettingsPanel({
 
       <Modal
         title="模型配置"
-        open={modal === "model"}
+        open={modal === "model" && !addingModel && !editingModel && !deletingModel}
         onCancel={() => setModal("")}
-        onOk={() => save({ llm_model: model })}
+        onOk={() =>
+          save(
+            selectedCustomModel
+              ? { custom_model_id: selectedCustomModel.id }
+              : { llm_model: model },
+          )
+        }
         okText="保存"
         cancelText="取消"
         confirmLoading={saving}
@@ -283,16 +311,129 @@ function SettingsPanel({
           <label>问数模型</label>
           <Select
             value={model}
+            open={
+              modelListOpen && modal === "model" && !addingModel && !editingModel && !deletingModel
+            }
+            onDropdownVisibleChange={setModelListOpen}
+            getPopupContainer={(trigger) => trigger.parentElement ?? trigger}
             onChange={setModel}
-            options={models.map((name) => ({ value: name, label: name }))}
-            style={{ width: "100%" }}
+            options={[
+              ...models.map((name) => ({ value: name, label: name })),
+              ...customModels.map((item) => ({
+                value: item.id,
+                label: `${item.display_name || item.model_name} · ${item.api_format === "anthropic" ? "Anthropic" : "OpenAI"}`,
+              })),
+            ]}
+            className={styles.modelSelect}
+            optionRender={(option) => {
+              const custom = customModels.find((item) => item.id === option.value);
+              return (
+                <div className={styles.modelOption}>
+                  <span>{option.label}</span>
+                  {custom && (
+                    <div
+                      className={styles.modelOptionActions}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <Button
+                        type="text"
+                        size="small"
+                        aria-label={`编辑模型 ${custom.display_name}`}
+                        disabled={saving || testing}
+                        onClick={() => {
+                          setModelListOpen(false);
+                          setEditingModel(custom);
+                        }}
+                      >
+                        编辑
+                      </Button>
+                      <Button
+                        type="text"
+                        size="small"
+                        danger
+                        aria-label={`删除模型 ${custom.display_name}`}
+                        disabled={saving || testing}
+                        onClick={() => {
+                          setModelListOpen(false);
+                          setDeletingModel(custom);
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            }}
           />
+          <Button
+            type="link"
+            icon={<PlusOutlined />}
+            className={styles.addModelButton}
+            disabled={saving || testing}
+            onClick={() => setAddingModel(true)}
+          >
+            新增模型
+          </Button>
           <p>该模型用于理解自然语言并生成受控查询计划。</p>
-          <p>向量模型由服务端配置，与这里选择的问数模型独立。</p>
-          <Button icon={<CheckOutlined />} loading={testing} onClick={() => onTest(model)}>
+          {/* <p>向量模型由服务端配置，与这里选择的问数模型独立。</p> */}
+          <Button
+            icon={<CheckOutlined />}
+            loading={testing}
+            onClick={() =>
+              onTest(selectedCustomModel?.model_name ?? model, selectedCustomModel?.id)
+            }
+          >
             测试所选模型连接
           </Button>
         </div>
+      </Modal>
+      {(addingModel || editingModel) && (
+        <AddModelDialog
+          model={editingModel}
+          onClose={() => {
+            setAddingModel(false);
+            setEditingModel(undefined);
+          }}
+          onAdded={(added) => {
+            onModelAdded(added);
+            setModel(added.id);
+            setAddingModel(false);
+            setEditingModel(undefined);
+            message.success(editingModel ? "模型已更新" : "模型已添加，点击保存后用于问数");
+          }}
+        />
+      )}
+      <Modal
+        title="删除模型"
+        open={!!deletingModel}
+        onCancel={() => !deleting && setDeletingModel(undefined)}
+        confirmLoading={deleting}
+        okText="删除"
+        cancelText="取消"
+        okButtonProps={{ danger: true }}
+        onOk={async () => {
+          if (!deletingModel || deleting) return;
+          setDeleting(true);
+          try {
+            const updatedSettings = await deleteCustomModel(deletingModel.id);
+            onModelDeleted(deletingModel.id, updatedSettings);
+            if (model === deletingModel.id)
+              setModel(updatedSettings.custom_model_id ?? updatedSettings.llm_model);
+            setDeletingModel(undefined);
+            message.success("模型已删除");
+          } catch (error) {
+            message.error(error instanceof Error ? error.message : "删除失败");
+          } finally {
+            setDeleting(false);
+          }
+        }}
+      >
+        <p>
+          确定删除“{deletingModel?.display_name}
+          ”及其已保存密钥？此操作不可撤销。若正在使用该模型，将恢复系统默认内置模型。
+        </p>
       </Modal>
     </div>
   );
@@ -300,8 +441,10 @@ function SettingsPanel({
 
 /** 应用配置是与智能问数同级的独立路由页面。 */
 export default function SettingsPage() {
+  const [message, contextHolder] = antdMessage.useMessage();
   const [settings, setSettings] = useState<AskSettings | null>(null);
   const [models, setModels] = useState<string[]>([]);
+  const [customModels, setCustomModels] = useState<CustomModel[]>([]);
   const [modelConfigured, setModelConfigured] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -317,7 +460,8 @@ export default function SettingsPage() {
         if (controller.signal.aborted) return;
         setSettings(currentSettings);
         setModels(catalog?.model?.available || []);
-        setModelConfigured(Boolean(catalog?.model?.configured));
+        setCustomModels(catalog.model.custom ?? []);
+        setModelConfigured(catalog.model.builtin_configured ?? catalog.model.configured);
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
@@ -333,6 +477,7 @@ export default function SettingsPage() {
 
   return (
     <div className={managementStyles.page}>
+      {contextHolder}
       <section className={`${managementStyles.card} ${styles.settingsPage}`}>
         <div className={managementStyles.heading}>
           <ControlOutlined />
@@ -358,13 +503,30 @@ export default function SettingsPage() {
             <SettingsPanel
               settings={settings}
               models={models}
+              customModels={customModels}
+              onModelAdded={(model) => {
+                setCustomModels((items) =>
+                  items.some((item) => item.id === model.id)
+                    ? items.map((item) => (item.id === model.id ? model : item))
+                    : [...items, model],
+                );
+                setSettings((current) =>
+                  current?.custom_model_id === model.id
+                    ? { ...current, llm_model: model.model_name }
+                    : current,
+                );
+              }}
+              onModelDeleted={(id, updated) => {
+                setCustomModels((items) => items.filter((item) => item.id !== id));
+                setSettings(updated);
+              }}
               modelConfigured={modelConfigured}
               testing={testing}
               onSave={async (values) => setSettings(await updateWorkbenchSettings(values))}
-              onTest={async (model) => {
+              onTest={async (model, customModelId) => {
                 setTesting(true);
                 try {
-                  const result = await testModel(model);
+                  const result = await testModel(model, customModelId);
                   message.success(
                     `${result.model} 连接成功，耗时 ${(result.duration_ms / 1000).toFixed(1)} 秒`,
                   );

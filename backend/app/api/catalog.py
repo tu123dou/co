@@ -10,7 +10,8 @@ from ..catalog import TABLE_CATALOG
 from ..db import engine
 from ..llm import ModelError, call_model, configured
 from ..repositories.catalog import dataset_info, get_catalog
-from ..repositories.workbench import get_workbench_settings
+from ..repositories.workbench import get_workbench_settings, list_models
+from ..repositories.models import selected_connection
 from ..semantic import DIMENSIONS, METRICS
 from ..user_settings import (
     ALLOWED_LLM_MODELS,
@@ -57,7 +58,9 @@ def catalog(user: User):
         "model": {
             "name": user_settings["llm_model"],
             "available": ALLOWED_LLM_MODELS,
-            "configured": configured(),
+            "configured": bool(user_settings["custom_model_id"]) or configured(),
+            "builtin_configured": configured(),
+            "custom": list_models(user["id"]),
         },
         "examples": [
             "今年各经营单元确认收入排名",
@@ -84,15 +87,16 @@ def catalog(user: User):
 
 @router.post("/api/model/test")
 async def test_model(body: ModelTest, user: User):
-    preferences = await run_in_threadpool(get_workbench_settings, user["id"])
-    saved_model = preferences["llm_model"]
-    model = body.model or saved_model
+    model, connection = await run_in_threadpool(
+        selected_connection, user["id"], body.model, body.custom_model_id,
+    )
     try:
         start = time.monotonic()
         await call_model(
             [{"role": "user", "content": "请只回复 OK"}],
             model=model,
             max_tokens=16,
+            **({"connection": connection} if connection else {}),
         )
         return {
             "ok": True,
