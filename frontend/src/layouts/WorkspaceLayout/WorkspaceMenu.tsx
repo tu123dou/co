@@ -159,7 +159,7 @@ export default function WorkspaceMenu(props: {
             <>
               <div>
                 {user.display_name}
-                <small>本地工作空间</small>
+                {/* <small>本地工作空间</small> */}
               </div>
               <Tooltip title="退出登录">
                 <Button type="text" icon={<LogoutOutlined />} disabled={busy} onClick={onLogout} />

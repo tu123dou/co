@@ -1,6 +1,7 @@
 """HTTP 请求模型；不向业务服务传递 Request 或 Depends 对象。"""
 
 from typing import Literal
+
 from pydantic import BaseModel, Field, SecretStr, field_validator
 
 from ..user_settings import ALLOWED_LLM_MODELS
@@ -9,6 +10,40 @@ from ..user_settings import ALLOWED_LLM_MODELS
 class Login(BaseModel):
     username: str = Field(min_length=1, max_length=80)
     password: str = Field(min_length=1, max_length=200)
+
+
+class Register(BaseModel):
+    username: str = Field(
+        min_length=3,
+        max_length=32,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+    )
+    display_name: str = Field(min_length=1, max_length=80)
+    password: SecretStr = Field(min_length=8, max_length=200)
+
+    @field_validator("username", "display_name", mode="before")
+    @classmethod
+    def trim_text(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("display_name")
+    @classmethod
+    def validate_display_name(cls, value):
+        if not value or any(ord(char) < 32 for char in value):
+            raise ValueError("显示名称不能为空或包含控制字符")
+        return value
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value):
+        password = value.get_secret_value()
+        if (
+            any(char.isspace() or ord(char) < 32 for char in password)
+            or not any(char.isalpha() for char in password)
+            or not any(char.isdigit() for char in password)
+        ):
+            raise ValueError("密码至少包含一个字母和一个数字，且不能包含空白字符")
+        return value
 
 
 class SpeechRequest(BaseModel):

@@ -85,6 +85,12 @@ PYTHONPATH=backend .venv/bin/python scripts/transfer-data.py import .runtime/pre
 
 ## 功能范围
 
+### 用户注册
+
+登录页可进入注册页面。注册账号只能是普通用户，用户名为 3–32 位字母、数字、点、下划线或连字符，密码至少 8 位并包含字母和数字；注册成功后直接建立登录会话。注册接口按客户端 IP 每分钟最多尝试 5 次，重复用户名不会覆盖已有账号。部署时可通过 `REGISTRATION_ENABLED=false` 关闭新用户注册，现有账号登录不受影响。
+
+注册用户共享查看 `analytics` 经营数据，但会话、收藏、反馈和工作台设置仍按用户隔离；只有数据库中已授予 `is_superuser` 的账号可以跨用户处理反馈。
+
 ### 自定义问数模型
 
 应用配置 → 模型配置 → 新增模型，可选择 OpenAI Chat Completions 或 Anthropic Messages 格式，填写请求地址、模型 ID、可选展示名称和 API 密钥。默认基础 URL 模式：OpenAI 补充 `/chat/completions`，Anthropic 补充 `/v1/messages`（基础地址已以 `/v1` 结尾则仅补充 `/messages`）；开启“完整 URL”后直接使用所填地址，不拼接路径。已有配置默认按完整 URL 处理。展示名称为空时使用模型 ID。测试连接后添加（测试非强制），选中并保存后用于当前用户的问数。添加不会修改当前选用模型，取消模型配置也不会删除已添加的条目。每人最多 20 个自定义配置，同协议、最终请求地址和模型 ID 不允许重复。模型仍须输出符合受控查询计划的 JSON；连通测试不等于查询计划兼容性验证。

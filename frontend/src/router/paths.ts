@@ -5,6 +5,11 @@ export const ROUTES = {
   feedback: "/feedback",
 } as const;
 
+export const AUTH_ROUTES = {
+  login: "/login",
+  register: "/register",
+} as const;
+
 export type WorkspacePage = keyof typeof ROUTES;
 
 export function pageFromPath(pathname: string): WorkspacePage | null {

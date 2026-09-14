@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -9,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class Settings(BaseSettings):
     """集中定义后端所有可通过环境变量覆盖的配置项。"""
+
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore")
     database_url: str = "postgresql+psycopg://app:app@127.0.0.1:5432/jingguan"
     query_database_url: str = (
@@ -16,6 +18,7 @@ class Settings(BaseSettings):
     )
     jwt_secret: str
     admin_password: str
+    registration_enabled: bool = True
     llm_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     llm_model: str = "qwen3.8-max"
     llm_api_key: str = ""
@@ -43,7 +46,11 @@ class Settings(BaseSettings):
     @property
     def allowed_origins(self) -> list[str]:
         """把环境变量中的来源列表转换为 CORS 和来源校验共用的数组。"""
-        return [origin.strip().rstrip("/") for origin in self.allowed_origin.split(",") if origin.strip()]
+        return [
+            origin.strip().rstrip("/")
+            for origin in self.allowed_origin.split(",")
+            if origin.strip()
+        ]
 
 
 @lru_cache

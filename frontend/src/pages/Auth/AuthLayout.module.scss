@@ -124,6 +124,15 @@
 .loginNote span {
   margin-right: 6px;
 }
+.authSwitch {
+  margin-top: 20px;
+  color: #7a889e;
+  text-align: center;
+}
+.authSwitch a {
+  margin-left: 6px;
+  font-weight: 600;
+}
 @media (max-width: 800px) {
   .loginPage {
     grid-template-columns: 1fr;
