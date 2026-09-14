@@ -15,3 +15,8 @@ engine = create_engine(
 query_engine = create_engine(
     settings().query_database_url, pool_pre_ping=True, pool_size=3, max_overflow=3
 )
+
+# 模型等待期间会持有会话锁，独立池防止锁占满消息/鉴权所需的连接。
+lock_engine = create_engine(
+    settings().database_url, pool_pre_ping=True, pool_size=5, max_overflow=5
+)

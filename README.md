@@ -134,10 +134,16 @@ cd frontend && npm run build
 ## 项目结构
 
 - `backend/app/semantic.py`：版本化指标字典、查询计划 Schema。
-- `backend/app/query.py`：只读 SQL 编译、校验及数值计算。
+- `backend/app/query/`：受控 SQL 编译、AST 校验、只读执行、数值计算及 SQL 展示。
 - `backend/app/llm.py`：百炼兼容接口、模型结果校验及有限重试。
 - `backend/app/retrieval.py`：业务目录生成、向量同步、精确词面匹配与 pgvector 召回。
-- `backend/app/main.py`：认证、会话、流式问数与辅助 API。
+- `backend/app/main.py`：应用工厂、中间件、异常处理与路由注册。
+- `backend/app/api/`：按认证、会话、问数、工作台、反馈、语音和导出划分的 HTTP 接口。
+- `backend/app/services/ask.py`：问数用例、执行状态与取消协调。
+- `backend/app/repositories/`：应用数据访问、所有权过滤、事务与用户查询锁。
+- `backend/app/contracts.py`：问数上下文、查询结果、执行记录和流事件契约。
+- `backend/app/presentation/`：确定性摘要、分析步骤和 CSV 渲染。
+- `backend/tests/unit/`、`backend/tests/integration/`：无需数据库的单元测试与显式启用的本地集成测试。
 - `backend/app/schema.py`：27 张领域表结构；`alembic/`：冻结迁移。
 - `backend/app/seed.py`：可重复、不可覆盖的模拟数据生成器。
 - `frontend/src/pages/`：智能问数、应用配置和回复校对页面。

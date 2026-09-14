@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 from app.llm import interpret
-from app.main import get_catalog, dataset_info, validate_filters
+from app.repositories.catalog import get_catalog, dataset_info, validate_filters
 from app.query import execute_plan
 from app.db import query_engine
 

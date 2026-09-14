@@ -167,11 +167,20 @@ def test_no_overpayment():
 
 
 def test_receivables_reconcile_to_payments_and_include_overdue():
-    assert scalar("SELECT SUM(settled_amount_ex_tax) FROM analytics.receivable_entries") == scalar("SELECT SUM(amount_ex_tax) FROM analytics.payment_entries")
-    assert scalar("SELECT count(*) FROM analytics.receivable_entries WHERE status='逾期' AND settled_amount_ex_tax<amount_ex_tax") > 0
+    assert scalar(
+        "SELECT SUM(settled_amount_ex_tax) FROM analytics.receivable_entries"
+    ) == scalar("SELECT SUM(amount_ex_tax) FROM analytics.payment_entries")
+    assert (
+        scalar(
+            "SELECT count(*) FROM analytics.receivable_entries WHERE status='逾期' AND settled_amount_ex_tax<amount_ex_tax"
+        )
+        > 0
+    )
 
 
-@pytest.mark.parametrize("metric", ["floor", "forecast", "outstanding_receivables", "overdue_receivables"])
+@pytest.mark.parametrize(
+    "metric", ["floor", "forecast", "outstanding_receivables", "overdue_receivables"]
+)
 def test_computing_business_metrics_return_data(metric):
     result = run(metric=metric)
     assert result["total"] > 0
@@ -197,7 +206,12 @@ def test_empty_and_zero_baseline():
 
 def test_master_data_returns_exact_total_and_limited_salespeople():
     result = execute_plan(
-        MasterDataPlan(query_kind="master_data", entity="salesperson", intent="count_and_list", limit=20),
+        MasterDataPlan(
+            query_kind="master_data",
+            entity="salesperson",
+            intent="count_and_list",
+            limit=20,
+        ),
         query_engine,
         date(2026, 8, 31),
         date(2024, 1, 1),

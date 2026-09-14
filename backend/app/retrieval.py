@@ -12,6 +12,7 @@ import time
 import uuid
 from collections import Counter
 
+from anyio import to_thread
 import httpx
 from sqlalchemy import delete, func, insert, select, update
 
@@ -38,7 +39,7 @@ METRIC_ALIASES = {
     "floor": ["保底", "保底收入"], "forecast": ["预测", "滚动预测", "预测收入"],
     "outstanding_receivables": ["未回款", "应收余额"], "overdue_receivables": ["逾期应收", "逾期未回款"],
 }
-# 这些文字用于向量检索解释数据血缘，真正执行口径仍以 query.py 为准。
+# 这些文字用于向量检索解释数据血缘，真正执行口径仍以 query/ 为准。
 METRIC_SOURCES = {
     "revenue": "analytics.revenue_entries.amount_ex_tax，按 recognition_date；经 contract_items 关联合同和产品",
     "signed": "analytics.contract_items.amount_ex_tax，关联 analytics.contracts.signed_date，并排除 cancelled 合同",
@@ -249,10 +250,15 @@ async def sync_index(force=False):
 
 
 async def retrieve(question, version):
-    """合并名称精确命中与余弦相似召回，并限制各类文档数量。"""
-    cfg = settings()
+    """网络调用异步等待，同步召回查询在工作线程执行。"""
     started = time.monotonic()
     vector = (await embed_texts([question]))[0]
+    return await to_thread.run_sync(_retrieve, question, version, vector, started)
+
+
+def _retrieve(question, version, vector, started):
+    """合并名称精确命中与余弦相似召回，并限制各类文档数量。"""
+    cfg = settings()
     distance = s.semantic_chunks.c.embedding.cosine_distance(vector).label("distance")
     base = (
         select(s.semantic_documents, distance)

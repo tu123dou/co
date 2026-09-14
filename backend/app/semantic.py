@@ -2,7 +2,7 @@
 
 METRICS 定义“算什么”，DIMENSIONS 定义“按什么查看”。大模型只能输出这里声明的
 Plan，不能自行增加表名或字段名。Pydantic 会检查日期、筛选、指标与维度组合，
-通过后才交给 query.py 编译 SQL。
+通过后才交给 query/ 编译 SQL。
 """
 
 from datetime import date
@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 METRICS = {
     # facts 表示计算指标所需的基础事实。普通指标通常只有一个事实，毛利等派生指标
-    # 会先分别查询多个事实，再在 query.py 中按统一维度计算。
+    # 会先分别查询多个事实，再在 query/ 中按统一维度计算。
     "revenue": {
         "name": "确认收入",
         "unit": "元",
@@ -59,7 +59,7 @@ METRICS = {
     "outstanding_receivables": {"name": "未回款金额", "unit": "元", "definition": "应收计划金额减已核销金额。", "facts": ["outstanding_receivables"]},
     "overdue_receivables": {"name": "逾期应收", "unit": "元", "definition": "到期且尚未结清的应收余额。", "facts": ["overdue_receivables"]},
 }
-# 模型只能选择这些逻辑维度；物理字段映射由 query.py 统一控制。
+# 模型只能选择这些逻辑维度；物理字段映射由 query/ 统一控制。
 DIMENSIONS = {
     "region": "区域",
     "city": "城市",
@@ -72,6 +72,11 @@ DIMENSIONS = {
     "receivable_plan": "应收计划",
     "month": "月份",
 }
+MASTER_ENTITY_NAMES = {
+    "customer": "客户", "salesperson": "销售人员", "product": "产品",
+    "product_line": "产品线", "org_unit": "经营单元", "industry": "行业",
+}
+
 Metric = Literal[
     "revenue",
     "signed",

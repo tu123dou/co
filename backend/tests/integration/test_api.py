@@ -1,84 +1,17 @@
 """API 测试：验证认证、对话、问数流式响应和错误处理。"""
 
-import os, uuid
+import os
+
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import delete, insert
-from app.main import app
-from app import main, schema as s
-from app.auth import hash_password
+from app import schema as s
 from app.db import engine
-from app.semantic import Interpretation, Plan
+from app.main import app
+from fastapi.testclient import TestClient
 
 pytestmark = pytest.mark.skipif(
     os.getenv("TEST_DATABASE") != "1",
     reason="Set TEST_DATABASE=1 for local integration checks",
 )
-
-
-@pytest.fixture
-def clients(monkeypatch):
-    async def fake_interpret(*args, **kwargs):
-        return Interpretation(
-            action="query",
-            plan=Plan(
-                metric="revenue",
-                dimensions=["product_line"],
-                start_date="2026-01-01",
-                end_date="2026-08-31",
-            ),
-            explanation="按产品线查询确认收入",
-        ), {"total_tokens": 0}
-
-    monkeypatch.setattr(main, "interpret", fake_interpret)
-    async def fake_retrieve(*args, **kwargs):
-        return {"context": [], "audit": None}
-
-    monkeypatch.setattr(main, "retrieve", fake_retrieve)
-    async def fake_call_model(*args, **kwargs):
-        return "OK", {"total_tokens": 1}
-
-    monkeypatch.setattr(main, "call_model", fake_call_model)
-    names = ["test_" + uuid.uuid4().hex[:12] for _ in range(2)]
-    ids = []
-    cs = []
-    with engine.begin() as conn:
-        for name in names:
-            ids.append(
-                conn.scalar(
-                    insert(s.users)
-                    .values(
-                        username=name,
-                        password_hash=hash_password("TestOnly!9423"),
-                        display_name="自动测试",
-                    )
-                    .returning(s.users.c.id)
-                )
-            )
-    for name in names:
-        client = TestClient(app)
-        res = client.post(
-            "/api/auth/login", json={"username": name, "password": "TestOnly!9423"}
-        )
-        assert res.status_code == 200
-        cs.append(client)
-    yield cs
-    for client in cs:
-        client.close()
-    with engine.begin() as conn:
-        conn.execute(delete(s.conversations).where(s.conversations.c.user_id.in_(ids)))
-        conn.execute(
-            delete(s.favorite_questions).where(s.favorite_questions.c.user_id.in_(ids))
-        )
-        conn.execute(
-            delete(s.user_question_stats).where(s.user_question_stats.c.user_id.in_(ids))
-        )
-        conn.execute(
-            delete(s.user_workbench_settings).where(
-                s.user_workbench_settings.c.user_id.in_(ids)
-            )
-        )
-        conn.execute(delete(s.users).where(s.users.c.id.in_(ids)))
 
 
 def test_auth_required():
@@ -109,7 +42,13 @@ def test_query_persistence_export_and_isolation(clients):
     assert answer["result"]["completed_at"].endswith("+00:00")
     assert len(answer["result"]["rows"]) == 5
     process = answer["result"]["analysis_process"]
-    assert [step["key"] for step in process] == ["source", "plan", "sql", "result", "done"]
+    assert [step["key"] for step in process] == [
+        "source",
+        "plan",
+        "sql",
+        "result",
+        "done",
+    ]
     assert "analytics.revenue_entries" in str(process[0])
     sql_step = process[2]["executions"][0]
     assert "WITH facts AS" in sql_step["executable_sql"]
@@ -148,9 +87,7 @@ def test_query_persistence_export_and_isolation(clients):
             .where(s.users.c.id == b.get("/api/auth/me").json()["id"])
             .values(is_superuser=True)
         )
-    assert feedback_id in {
-        row["id"] for row in b.get("/api/feedbacks").json()["items"]
-    }
+    assert feedback_id in {row["id"] for row in b.get("/api/feedbacks").json()["items"]}
     assert (
         b.patch(
             "/api/feedbacks/" + str(feedback_id),
@@ -199,10 +136,15 @@ def test_workbench_settings_are_user_scoped(clients):
     assert updated.status_code == 200
     assert updated.json()["welcome_title"] == "我的经营助手"
     assert updated.json()["llm_model"] == "qwen3.8-flash"
-    assert b.get("/api/workbench/settings").json()["welcome_title"] == default_b["welcome_title"]
+    assert (
+        b.get("/api/workbench/settings").json()["welcome_title"]
+        == default_b["welcome_title"]
+    )
     assert b.get("/api/workbench/settings").json()["llm_model"] == "qwen3.8-max"
     assert (
-        a.patch("/api/workbench/settings", json={"llm_model": "unknown-model"}).status_code
+        a.patch(
+            "/api/workbench/settings", json={"llm_model": "unknown-model"}
+        ).status_code
         == 422
     )
     tested = a.post("/api/model/test", json={"model": "glm-5.2"})
