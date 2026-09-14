@@ -4,6 +4,7 @@ import { useRoutes } from "react-router-dom";
 import { getCurrentUser, logout, type CurrentUser } from "./api/auth";
 import LoginPage from "./pages/Login/LoginPage";
 import { createAppRoutes } from "./router/routes";
+import styles from "./App.module.scss";
 
 function AuthenticatedRoutes({ user, onLogout }: { user: CurrentUser; onLogout: () => void }) {
   return useRoutes(createAppRoutes(user, onLogout));
@@ -14,9 +15,17 @@ export default function App() {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    getCurrentUser().then(setUser).catch(() => {}).finally(() => setLoading(false));
+    getCurrentUser()
+      .then(setUser)
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
-  if (loading) return <div className="screen-center"><Spin size="large" /></div>;
+  if (loading)
+    return (
+      <div className={styles.screenCenter}>
+        <Spin size="large" />
+      </div>
+    );
   if (!user) return <LoginPage onLogin={setUser} />;
   return <AuthenticatedRoutes user={user} onLogout={() => logout().then(() => setUser(null))} />;
 }

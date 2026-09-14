@@ -1,0 +1,135 @@
+.settings p {
+  font-size: 14px;
+  color: #8897ac;
+  line-height: 1.8;
+}
+.settings hr {
+  border: 0;
+  border-top: 1px solid #e9eef6;
+  margin: 28px 0;
+}
+.settings h3 {
+  font-size: 16px;
+}
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.settingCard {
+  min-height: 150px;
+  border: 1px solid #e3e9f2;
+  border-radius: 14px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  background: #fff;
+}
+.settingCard > .settingContent {
+  min-width: 0;
+}
+.settingCard h3 {
+  margin: 3px 0 5px;
+  font-size: 15px;
+}
+.settingCard p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.settingActions {
+  grid-column: 3;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  align-self: center;
+}
+.settingActions > :global(.ant-btn) {
+  color: #8b98aa;
+  font-size: 18px;
+  padding-inline: 4px;
+}
+.settingActions > :global(.ant-tag) {
+  margin-inline-end: 0;
+}
+.settingIcon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  font-size: 20px;
+  grid-row: 1 / span 2;
+}
+.settingIcon.blue {
+  background: #edf4ff;
+  color: #3876e8;
+}
+.settingIcon.amber {
+  background: #fff6dc;
+  color: #cf8b17;
+}
+.settingIcon.violet {
+  background: #f3edff;
+  color: #8459d3;
+}
+.settingIcon.orange {
+  background: #fff0dd;
+  color: #da761f;
+}
+.settingsForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+}
+.settingsForm label {
+  color: #293d5b;
+  font-size: 14px;
+  font-weight: 600;
+}
+.settingsForm p {
+  color: #8b98aa;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 2px 0;
+}
+.settingsFormHeading,
+.starterQuestionRow,
+.thresholdForm > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.settingsFormHeading {
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.starterQuestionRow :global(.ant-input) {
+  flex: 1;
+}
+.thresholdForm > div span {
+  color: #77869a;
+}
+
+.settingsPage .settingsGrid {
+  gap: 18px;
+}
+.settingsPage .settingCard {
+  min-height: 175px;
+  padding: 22px;
+}
+
+@media (max-width: 760px) {
+  .settingsGrid {
+    grid-template-columns: 1fr;
+  }
+  .settingsPage .settingCard {
+    min-height: 0;
+    padding: 18px;
+  }
+}

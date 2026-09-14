@@ -1,0 +1,369 @@
+.workbench {
+  height: 100dvh;
+  display: flex;
+  overflow: hidden;
+  background: #f6f8fc;
+}
+
+.workbench button:focus-visible {
+  outline: 2px solid #5b8fdd;
+  outline-offset: 2px;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fbfcfe;
+}
+
+.favoriteList > div {
+  padding: 14px 0;
+  border-bottom: 1px solid #edf1f6;
+}
+
+.favoriteList > div > button:first-child {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  border: 0;
+  background: #fff;
+  color: #4d6688;
+  font-size: 14px;
+  line-height: 1.8;
+  text-align: left;
+  cursor: pointer;
+}
+
+.topbar {
+  height: 66px;
+  padding: 0 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #edf0f6;
+  background: #fff;
+}
+
+.topbar > div {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.breadcrumb {
+  color: #8a96a8;
+  font-size: 13px;
+}
+.breadcrumb span {
+  padding: 0 12px;
+  color: #c2c9d4;
+}
+.breadcrumb b {
+  color: #526077;
+  font-weight: 500;
+}
+.right {
+  gap: 8px !important;
+  color: #8c99ac;
+  font-size: 12px;
+}
+.datasetDate {
+  font-variant-numeric: tabular-nums;
+}
+
+.sidebar {
+  width: 244px;
+  padding: 28px 17px 16px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e3e9f2;
+  background: #f1f5fa;
+  transition: width 0.2s;
+}
+
+.brand {
+  padding: 0 9px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 21px;
+  white-space: nowrap;
+}
+
+.brand small {
+  margin-top: 4px;
+  display: block;
+  color: #8594a8;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 2px;
+}
+
+.brandIcon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 22px;
+}
+
+.newChat {
+  height: 42px !important;
+  margin: 30px 4px 10px 10px;
+  box-shadow: 0 4px 10px #2563eb16 !important;
+}
+
+.navItem {
+  width: 100%;
+  min-height: 43px;
+  margin: 3px 0;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #66758b;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.navItem > :global(.anticon) {
+  font-size: 18px;
+}
+.navItem:hover {
+  background: #e7edf6;
+}
+.navItem.active {
+  background: #e4edfe;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.history {
+  min-height: 0;
+  margin-top: 27px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.historyHeading {
+  padding: 0 14px;
+  display: flex;
+  justify-content: space-between;
+  color: #8a98ab;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.historySearch {
+  margin-top: 10px;
+  color: #8c9bad;
+  font-size: 12px !important;
+}
+.historySearch input {
+  font-size: 12px !important;
+}
+.historyList {
+  margin-top: 5px;
+  overflow: auto;
+}
+
+.historyItem {
+  min-height: 38px;
+  margin: 3px 0;
+  display: flex;
+  align-items: center;
+  border-radius: 7px;
+}
+
+.historyItem.selected {
+  background: #e4ebf6;
+}
+.historyItem:hover {
+  background: #e6ecf5;
+}
+
+.historyItem > button:first-child {
+  min-width: 0;
+  padding: 10px 0 10px 14px;
+  flex: 1;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: #617086;
+  font-size: 13px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.historyItem :global(.ant-btn) {
+  opacity: 0;
+  color: #7a8aa0;
+}
+.historyItem:hover :global(.ant-btn),
+.historyItem:focus-within :global(.ant-btn),
+.historyItem.selected :global(.ant-btn) {
+  opacity: 1;
+}
+
+.historyEmpty {
+  padding: 14px;
+  color: #9ba7b7;
+  font-size: 12px;
+}
+
+.pinDot {
+  width: 5px;
+  height: 5px;
+  margin-right: 6px;
+  display: inline-block;
+  border-radius: 50%;
+  background: #6f95d9;
+}
+
+.sidebarBottom {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.userRow {
+  padding: 18px 9px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #e1e7f0;
+  font-size: 13px;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #dee8f7;
+  color: #5479b6;
+}
+
+.userRow small {
+  margin-top: 3px;
+  display: block;
+  color: #8d9cb1;
+  font-size: 11px;
+}
+.userRow :global(.ant-btn) {
+  margin-left: auto;
+}
+
+.collapsed {
+  width: 78px;
+  padding: 28px 11px 16px;
+}
+.collapsed .brand {
+  padding: 0 7px;
+}
+.collapsed .newChat {
+  margin-top: 30px;
+  padding: 0;
+}
+.collapsed .navItem {
+  justify-content: center;
+  padding: 12px;
+}
+.collapsed .userRow {
+  padding: 16px 10px 0;
+}
+.mobileHistory {
+  display: none;
+}
+
+@media (max-width: 1050px) {
+  .sidebar {
+    width: 210px;
+    padding-inline: 12px;
+  }
+  .collapsed {
+    width: 78px;
+    padding-inline: 11px;
+  }
+  .topbar {
+    padding-inline: 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    height: 56px;
+    padding: 0 10px;
+  }
+  .topbar > div {
+    gap: 4px;
+  }
+  .breadcrumb {
+    font-size: 12px;
+  }
+  .breadcrumb > span {
+    padding: 0 6px;
+  }
+  .datasetDate {
+    display: none;
+  }
+  .right :global(.ant-tag) {
+    margin: 0;
+    font-size: 11px;
+  }
+
+  .sidebar,
+  .collapsed {
+    width: 66px;
+    padding: 18px 8px;
+  }
+  .brand {
+    padding: 0 5px;
+  }
+  .brand > span:last-child:not(.brandIcon),
+  .brand small,
+  .newChat > span:not(:global(.anticon)):not(:global(.ant-btn-icon)),
+  .history,
+  .userRow > div {
+    display: none;
+  }
+  .newChat {
+    margin: 22px 0 16px;
+    padding: 0;
+  }
+  .newChat > :global(.ant-btn-icon) {
+    display: inline-flex;
+  }
+  .navItem {
+    justify-content: center;
+    padding: 10px;
+    font-size: 0;
+  }
+  .userRow {
+    padding: 14px 7px 0;
+  }
+  .userRow > :global(.ant-btn) {
+    margin: 0;
+    display: inline-flex;
+  }
+  .avatar {
+    display: none;
+  }
+  .mobileHistory {
+    display: flex;
+  }
+}

@@ -51,7 +51,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: frontend/Dockerfile
+      dockerfile: frontend/build/Dockerfile
     ports:
       # 本地默认仅监听 127.0.0.1:5178；云服务器可在 .env 中改为 0.0.0.0:80。
       - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-5178}:80"

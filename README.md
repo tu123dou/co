@@ -38,7 +38,7 @@ docker compose run --rm backend python -m app.retrieval sync
 ## 当前机器访问
 
 - 网站：http://127.0.0.1:5178/
-- API 文档：http://127.0.0.1:8000/docs
+- API 文档：直接启动本机后端时为 http://127.0.0.1:8000/docs；Compose 默认不映射后端端口。
 - 用户名：`admin`
 - 密码：项目根目录 `.env` 的 `ADMIN_PASSWORD`。
 - API Key 已保存在本地 `.env`；修改后重启后端。不要提交或公开该文件。
@@ -67,6 +67,8 @@ VITE_API_PROXY=http://8.137.78.125 npm run dev
 - `.env` 中的初始登录密码仅用于首次创建账号，之后修改环境变量不会自动重置已有密码。
 - 不要运行 `docker compose down -v`，除非确实要删除整个容器数据库。
 
+旧嵌入式开发入口为 `sh scripts/dev-legacy.sh`，只用于旧环境维护，不是当前推荐的启动方式；该入口固定代理本机 8000 端口，不会读取云端代理目标。
+
 原 embedded-postgres 数据迁移时，先保持旧库运行并执行：
 
 ```sh
@@ -79,7 +81,7 @@ PYTHONPATH=backend .venv/bin/python scripts/transfer-data.py import .runtime/pre
 
 `.env.example` 中 `${...}` 是生成占位符，请使用脚本而非直接复制后启动。
 
-云端公开部署前需配置域名、HTTPS、`COOKIE_SECURE=true`、正确的 `ALLOWED_ORIGIN`，并配置备份和入口限流；当前配置只对本机开放。
+云端公开部署前需配置域名、HTTPS、`COOKIE_SECURE=true`、正确的 `ALLOWED_ORIGIN`，并配置备份和入口限流；默认绑定本机，实际绑定以 `.env` 的 `APP_BIND_ADDRESS` 为准。
 
 ## 功能范围
 
@@ -89,11 +91,11 @@ PYTHONPATH=backend .venv/bin/python scripts/transfer-data.py import .runtime/pre
 - 汇总、排名、月份趋势、维度拆分、同比、环比。
 - 指标卡、折线/柱状/占比图、数据表、当前展示结果 CSV 导出。
 - 指标口径、参数化 SQL、数据版本、查询耗时可追溯。
-- 收藏、回答反馈、模型连接测试。
+- 收藏、回答反馈、回复校对管理、模型连接测试。
 
 每次问数由模型解释为受约束的结构化计划，程序校验后编译 SQL。金额及同比计算来自数据库和 Decimal 运算；中文结论使用可核对的确定性模板生成，避免模型补写数字。图表来自同一结果集。推荐追问来自业务规则。
 
-未实现：任意 SQL 编辑、跨数据源接入、文件上传、自由因果归因、金额区间筛选、订单数量、任意逐笔财务流水、商机/PPL、项目风险、产品线回款分摊和反馈管理后台。已支持受控的客户合同清单、单笔应收计划排行、经营预测和应收分析。未知能力会明确提示，不静默替换查询。用户共享业务数据，个人会话、收藏和工作台设置等应用数据相互隔离。
+未实现：任意 SQL 编辑、跨数据源接入、文件上传、自由因果归因、金额区间筛选、订单数量、任意逐笔财务流水、商机/PPL、项目风险、产品线回款分摊。已支持受控的客户合同清单、单笔应收计划排行、经营预测和应收分析。未知能力会明确提示，不静默替换查询。用户共享业务数据，个人会话、收藏和工作台设置等应用数据相互隔离。
 
 ## 数据与口径
 
@@ -139,9 +141,14 @@ cd frontend && npm run build
 - `backend/app/schema.py`：27 张领域表结构；`alembic/`：冻结迁移。
 - `backend/app/seed.py`：可重复、不可覆盖的模拟数据生成器。
 - `frontend/src/pages/`：智能问数、应用配置和回复校对页面。
-- `frontend/src/components/`：回答、图表和快捷问题等公共业务组件。
+- `frontend/src/pages/Ask/components/`：Ask 专属的回答、图表、输入器和快捷问题组件。
+- `frontend/src/layouts/WorkspaceLayout/`：布局外壳、Header、Menu 及共享 CSS Module。
+- `frontend/src/models/`：共享接口契约；页面内部 `model/` 保存页面状态转换。
 - `frontend/src/api/`：按认证、会话、工作台、问题、反馈和语音拆分的请求模块。
-- `frontend/src/styles/`：按基础、登录、工作台、回答、管理页和响应式规则拆分的 Less 样式。
+- `frontend/src/styles/`：基础全局 SCSS 和全局第三方覆盖；页面样式使用同目录的 CSS Modules。
+- `frontend/vite.config.ts`：Vite 开发与打包配置；`frontend/build/` 存放前端 Dockerfile 与 Nginx 配置；`frontend/dist/` 是忽略提交的构建产物。
+- `frontend/package.json`、`frontend/tsconfig.json`、`frontend/index.html`：保留在前端根目录的工具与应用入口。
+- `scripts/`：环境准备、数据库运维和显式执行的模型评估脚本，详见 `scripts/README.md`。
 - `docs/architecture.md`：执行边界与后续扩展。
 
 模型仅接收召回的业务目录、合法实体值、用户问题和近期上下文，不获得数据库账号或 API Key。pgvector 只选择相关指标、维度、表字段、实体和示例；模型仍只生成受 Pydantic 约束的计划，SQL 由程序编译并经 SQLGlot 校验。第一版直接使用 SQLAlchemy + pgvector，不引入 LlamaIndex。

@@ -1,45 +1,67 @@
+import type { AnalysisStep, QueryResult } from "../models/ask";
 import { post, rawRequest, request } from "./client";
-import type { Conversation, ConversationSummary, Msg } from "../models/query";
+import { readAskStream } from "./askStream";
+
+export type MessageResult =
+  | QueryResult
+  | {
+      status: "error" | "cancelled" | "clarify" | "unsupported";
+      error_code?: string;
+    };
+
+export type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at?: string;
+  result?: MessageResult;
+};
+
+export type ConversationSummary = {
+  id: string;
+  title: string;
+  pinned: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type Conversation = ConversationSummary & { messages: ChatMessage[] };
+
+export type AskStreamEvent =
+  | { type: "status"; stage: string; detail?: string }
+  | { type: "analysis"; step: AnalysisStep }
+  | { type: "result"; message: ChatMessage };
 
 export const listConversations = () => request<ConversationSummary[]>("/conversations");
 export const createConversation = () => post<{ id: string }>("/conversations");
-export const getConversation = (id: string) => request<Conversation>(`/conversations/${id}`);
-export const updateConversation = (id: string, body: unknown) =>
+export const fetchConversation = (id: string, signal?: AbortSignal) =>
+  request<Conversation>(`/conversations/${id}`, { signal });
+export const updateConversation = (id: string, body: { title?: string; pinned?: boolean }) =>
   request(`/conversations/${id}`, { method: "PATCH", body: JSON.stringify(body) });
-export const deleteConversation = (id: string) => request(`/conversations/${id}`, { method: "DELETE" });
-export const askQuestion = (id: string, question: string, signal: AbortSignal) =>
-  rawRequest(`/conversations/${id}/ask`, {
+export const deleteConversation = (id: string) =>
+  request(`/conversations/${id}`, { method: "DELETE" });
+
+export async function streamQuestion(
+  conversationId: string,
+  question: string,
+  signal: AbortSignal,
+  onEvent: (event: AskStreamEvent) => void,
+) {
+  const response = await rawRequest(`/conversations/${conversationId}/ask`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ question }),
     signal,
   });
-
-export type AskEvent =
-  | { type: "status"; stage: string; detail?: string }
-  | { type: "analysis"; step: unknown }
-  | { type: "result"; message: Msg };
-
-/** Parse the backend's newline-delimited stream without leaking transport details into UI hooks. */
-export async function readAskEvents(
-  response: Response,
-  onEvent: (event: AskEvent) => void,
-) {
   if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data.detail || "问数失败");
+    const payload: unknown = await response.json().catch(() => ({}));
+    const detail =
+      typeof payload === "object" && payload !== null && "detail" in payload
+        ? payload.detail
+        : undefined;
+    throw new Error(typeof detail === "string" ? detail : `问数失败 (${response.status})`);
   }
-  if (!response.body) throw new Error("连接中断，未收到响应内容");
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    buffer += decoder.decode(value, { stream: !done });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-    for (const line of lines) if (line.trim()) onEvent(JSON.parse(line) as AskEvent);
-    if (done) break;
-  }
-  if (buffer.trim()) onEvent(JSON.parse(buffer) as AskEvent);
+  if (!response.body) throw new Error("连接已建立，但没有收到响应内容");
+
+  await readAskStream(response.body, signal, onEvent);
 }

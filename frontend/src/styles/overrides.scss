@@ -1,10 +1,4 @@
+// 全站表格统一使用等宽数字，便于数值列对齐；此处只允许这类全局排版约定。
 .ant-table {
   font-variant-numeric: tabular-nums;
-}
-.ant-drawer-body h3 {
-  font-weight: 600;
-}
-.workbench button:focus-visible {
-  outline: 2px solid #5b8fdd;
-  outline-offset: 2px;
 }

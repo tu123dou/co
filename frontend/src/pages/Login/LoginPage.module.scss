@@ -1,0 +1,142 @@
+.loginPage {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.08fr 1fr;
+}
+.loginStory {
+  background: #102e58;
+  color: white;
+  padding: 44px 56px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: 1px;
+}
+.brandIcon {
+  display: grid;
+  place-items: center;
+  background: #2563eb;
+  color: white;
+  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  font-size: 22px;
+}
+.loginCopy {
+  max-width: 520px;
+  margin: auto 0;
+  padding: 55px 0;
+}
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #88addb;
+  font-weight: 650;
+}
+.loginCopy h1 {
+  font-size: 42px;
+  line-height: 1.5;
+  letter-spacing: 1px;
+  margin: 20px 0;
+}
+.loginCopy p {
+  color: #b5c8e1;
+  line-height: 1.9;
+}
+.sampleChart {
+  margin-top: 36px;
+  padding: 24px 28px;
+  border: 1px solid #456180;
+  border-radius: 16px;
+  background: #ffffff08;
+  max-width: 440px;
+}
+.chartHeading {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+.chartHeading span {
+  font-size: 12px;
+  color: #96b3d7;
+}
+.bars {
+  height: 118px;
+  display: flex;
+  align-items: end;
+  gap: 15px;
+  border-bottom: 1px solid #4f6786;
+  margin: 25px 0 16px;
+}
+.bars div {
+  flex: 1;
+  background: #598ff0;
+  border-radius: 4px 4px 0 0;
+}
+.bars div:nth-last-child(1) {
+  background: #95c5ff;
+}
+.chartCaption {
+  font-size: 12px;
+  color: #96b3d7;
+  letter-spacing: 2px;
+}
+.loginFoot {
+  font-size: 12px;
+  color: #8ca8cb;
+}
+.loginForm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: #fff;
+}
+.formInner {
+  width: 360px;
+}
+.formInner h2 {
+  font-size: 28px;
+  margin: 16px 0;
+}
+.formInner > p {
+  color: #7a889e;
+  font-size: 14px;
+  margin-bottom: 34px;
+}
+.formInner :global(.ant-alert) {
+  margin-bottom: 20px;
+}
+.loginNote {
+  margin-top: 30px;
+  color: #8a96a8;
+  font-size: 12px;
+  text-align: center;
+}
+.loginNote span {
+  margin-right: 6px;
+}
+@media (max-width: 800px) {
+  .loginPage {
+    grid-template-columns: 1fr;
+  }
+  .loginStory {
+    padding: 24px;
+  }
+  .loginCopy,
+  .loginFoot {
+    display: none;
+  }
+  .loginForm {
+    min-height: 80vh;
+    padding: 24px;
+  }
+}

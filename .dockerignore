@@ -1,4 +1,8 @@
 .env
+**/.env
+**/.env.*
+**/*.tsbuildinfo
+**/.vite
 .git
 .venv
 .runtime
@@ -6,4 +10,3 @@
 **/dist
 **/__pycache__
 **/.pytest_cache
-demo.html

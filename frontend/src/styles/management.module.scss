@@ -1,0 +1,59 @@
+// 设置与反馈页面共用的内容区样式，不属于布局外壳。
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 26px 34px 38px;
+}
+
+.card {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 26px;
+  border: 1px solid #e8edf4;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 2px 7px rgb(29 54 92 / 5%);
+}
+
+.heading {
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #233a5d;
+}
+
+.heading > :global(.anticon) {
+  color: #315fe9;
+  font-size: 19px;
+}
+.heading strong {
+  font-size: 18px;
+}
+.heading span {
+  color: #9ba6b6;
+  font-size: 13px;
+}
+
+.loading {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: 18px 12px 28px;
+  }
+  .card {
+    padding: 18px 14px;
+  }
+  .heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .heading span {
+    width: 100%;
+  }
+}
