@@ -49,6 +49,7 @@ export default function WorkspaceMenu(props: {
     handleConversationAction,
     onLogout,
   } = props;
+  const avatarText = Array.from(user.display_name.trim())[0] ?? "用";
   const navClass = (target: WorkspacePage) =>
     `${styles.navItem} ${page === target ? styles.active : ""}`;
   return (
@@ -153,7 +154,7 @@ export default function WorkspaceMenu(props: {
       )}
       <div className={styles.sidebarBottom}>
         <div className={styles.userRow}>
-          <span className={styles.avatar}>管</span>
+          <span className={styles.avatar}>{avatarText}</span>
           {!collapsed && (
             <>
               <div>

@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { Button, Empty, Input, Modal, Pagination, Select, Table, Tag, message } from "antd";
+import {
+  Button,
+  Empty,
+  Input,
+  Modal,
+  Pagination,
+  Select,
+  Table,
+  Tag,
+  message as antdMessage,
+} from "antd";
 import { ExclamationCircleFilled, SearchOutlined } from "@ant-design/icons";
 import { listFeedbacks, reviewFeedback, type FeedbackRecord } from "../../api/feedback";
 import managementStyles from "../../styles/management.module.scss";
@@ -19,6 +29,7 @@ const formatTime = (value: string) =>
     .replaceAll("/", "-");
 
 export default function FeedbackManagement({ isSuperuser }: { isSuperuser: boolean }) {
+  const [message, contextHolder] = antdMessage.useMessage();
   const [rows, setRows] = useState<FeedbackRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState({
@@ -73,6 +84,7 @@ export default function FeedbackManagement({ isSuperuser }: { isSuperuser: boole
 
   return (
     <div className={managementStyles.page}>
+      {contextHolder}
       <section className={managementStyles.card}>
         <div className={managementStyles.heading}>
           <ExclamationCircleFilled />
@@ -124,6 +136,12 @@ export default function FeedbackManagement({ isSuperuser }: { isSuperuser: boole
             },
             { title: "用户", dataIndex: "display_name", width: 140 },
             { title: "问题", dataIndex: "question", ellipsis: true },
+            {
+              title: "反馈内容",
+              dataIndex: "comment",
+              ellipsis: true,
+              render: (value: string) => value || "—",
+            },
             { title: "反馈时间", dataIndex: "created_at", width: 195, render: formatTime },
             {
               title: "状态",
@@ -155,7 +173,7 @@ export default function FeedbackManagement({ isSuperuser }: { isSuperuser: boole
               ),
             },
           ]}
-          scroll={{ x: 900 }}
+          scroll={{ x: 1100 }}
         />
         <div className={styles.pagination}>
           <Pagination

@@ -1,4 +1,4 @@
-import { Alert, Drawer, Input, Modal, Table, Tabs, Tag, message } from "antd";
+import { Alert, Drawer, Input, Modal, Table, Tabs, Tag, message as antdMessage } from "antd";
 import { useState } from "react";
 import { createFeedback } from "../../../api/feedback";
 import type { Catalog } from "../../../api/workbench";
@@ -97,6 +97,7 @@ export function FeedbackDialog({
   messageId: string | null;
   onClose: () => void;
 }) {
+  const [message, contextHolder] = antdMessage.useMessage();
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const close = () => {
@@ -104,36 +105,39 @@ export function FeedbackDialog({
     onClose();
   };
   return (
-    <Modal
-      title="回答反馈"
-      open={Boolean(messageId)}
-      okText="提交反馈"
-      cancelText="取消"
-      confirmLoading={submitting}
-      okButtonProps={{ disabled: !comment.trim() }}
-      onCancel={close}
-      onOk={async () => {
-        if (!messageId) return;
-        setSubmitting(true);
-        try {
-          await createFeedback(messageId, comment.trim());
-          message.success("反馈已保存");
-          close();
-        } catch (cause) {
-          message.error((cause as Error).message);
-        } finally {
-          setSubmitting(false);
-        }
-      }}
-    >
-      <p>请说明有疑问的数据或口径，帮助后续核查。</p>
-      <Input.TextArea
-        value={comment}
-        onChange={(event) => setComment(event.target.value)}
-        maxLength={1000}
-        rows={4}
-        placeholder="例如：收入统计范围与预期不一致…"
-      />
-    </Modal>
+    <>
+      {contextHolder}
+      <Modal
+        title="回答反馈"
+        open={Boolean(messageId)}
+        okText="提交反馈"
+        cancelText="取消"
+        confirmLoading={submitting}
+        okButtonProps={{ disabled: !comment.trim() }}
+        onCancel={close}
+        onOk={async () => {
+          if (!messageId) return;
+          setSubmitting(true);
+          try {
+            await createFeedback(messageId, comment.trim());
+            message.success("反馈提交成功");
+            close();
+          } catch (cause) {
+            message.error(cause instanceof Error ? cause.message : "反馈提交失败，请重试");
+          } finally {
+            setSubmitting(false);
+          }
+        }}
+      >
+        <p>请说明有疑问的数据或口径，帮助后续核查。</p>
+        <Input.TextArea
+          value={comment}
+          onChange={(event) => setComment(event.target.value)}
+          maxLength={1000}
+          rows={4}
+          placeholder="例如：收入统计范围与预期不一致…"
+        />
+      </Modal>
+    </>
   );
 }
