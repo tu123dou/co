@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, Button, Form, Input } from "antd";
-import { ArrowRightOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { login, type CurrentUser } from "../../api/auth";
 import { AUTH_ROUTES } from "../../router/paths";
@@ -47,8 +47,6 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CurrentUser) =>
       </Form>
       <div className={styles.authSwitch}>
         还没有账号？<Link to={AUTH_ROUTES.register}>创建账号</Link>
-      </div>
-      <div className={styles.loginNote}>
       </div>
     </AuthLayout>
   );
