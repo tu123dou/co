@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { createConversation, fetchConversation, streamQuestion } from "../../../api/conversations";
 import { initialSessionState, sessionReducer } from "../model/sessionReducer";
 import type { ChatMessage } from "../../../api/conversations";
+import { askConversationPath } from "../../../router/paths";
 
 function temporaryId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -13,7 +14,8 @@ export function useConversationSession(
   onQuestionCompleted: () => Promise<void>,
 ) {
   const [state, dispatch] = useReducer(sessionReducer, initialSessionState);
-  const [searchParams] = useSearchParams();
+  const { conversationId: routeConversationId } = useParams<{ conversationId: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const loadController = useRef<AbortController | null>(null);
   const streamController = useRef<AbortController | null>(null);
@@ -23,12 +25,12 @@ export function useConversationSession(
   const internallyCreated = useRef<string | null>(null);
 
   useEffect(() => {
-    const id = searchParams.get("conversation");
+    const id = routeConversationId ?? null;
     loadController.current?.abort();
     loadVersion.current += 1;
     const version = loadVersion.current;
 
-    if (internallyCreated.current === id) {
+    if (id && internallyCreated.current === id) {
       internallyCreated.current = null;
       return;
     }
@@ -59,7 +61,7 @@ export function useConversationSession(
         }
       });
     return () => controller.abort();
-  }, [searchParams.toString()]);
+  }, [location.key, routeConversationId]);
 
   useEffect(
     () => () => {
@@ -88,7 +90,7 @@ export function useConversationSession(
           conversationId = (await createConversation()).id;
           if (version !== generationVersion.current) return;
           internallyCreated.current = conversationId;
-          navigate(`/ask?conversation=${encodeURIComponent(conversationId)}`, { replace: true });
+          navigate(askConversationPath(conversationId), { replace: true });
           await onConversationChanged();
         }
 

@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { Drawer, Empty, Input, Modal, message } from "antd";
-import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { CurrentUser } from "../../api/auth";
 import { deleteConversation, listConversations, updateConversation } from "../../api/conversations";
 import { getCatalog } from "../../api/workbench";
-import { pageFromPath, ROUTES, type WorkspacePage } from "../../router/paths";
+import {
+  askConversationPath,
+  conversationIdFromPath,
+  pageFromPath,
+  ROUTES,
+  type WorkspacePage,
+} from "../../router/paths";
 import WorkspaceMenu from "./WorkspaceMenu";
 import WorkspaceHeader from "./WorkspaceHeader";
 import type { ConversationSummary } from "../../api/conversations";
@@ -25,7 +31,6 @@ export default function WorkspaceLayout({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const page = pageFromPath(location.pathname) ?? "ask";
   const [collapsed, setCollapsed] = useState(false);
   const [search, setSearch] = useState("");
@@ -34,6 +39,7 @@ export default function WorkspaceLayout({
   const [cutoffDate, setCutoffDate] = useState("");
   const [rename, setRename] = useState<ConversationSummary | null>(null);
   const [renameText, setRenameText] = useState("");
+  const currentConversationId = conversationIdFromPath(location.pathname);
   const refreshConversations = useCallback(async () => {
     setConversations(await listConversations());
   }, []);
@@ -48,11 +54,11 @@ export default function WorkspaceLayout({
   const setPage = (next: WorkspacePage) => navigate(ROUTES[next]);
   const openConversation = (id: string) => {
     setDrawer("");
-    navigate(`${ROUTES.ask}?conversation=${encodeURIComponent(id)}`);
+    navigate(askConversationPath(id));
   };
   const newConversation = () => {
     setDrawer("");
-    navigate(`${ROUTES.ask}?new=${Date.now()}`);
+    navigate(ROUTES.ask, { state: { startNewConversation: true } });
   };
   const handleConversationAction = async (conversation: ConversationSummary, key: string) => {
     if (key === "rename") {
@@ -65,7 +71,7 @@ export default function WorkspaceLayout({
         await updateConversation(conversation.id, { pinned: !conversation.pinned });
       if (key === "delete") {
         await deleteConversation(conversation.id);
-        if (searchParams.get("conversation") === conversation.id) newConversation();
+        if (currentConversationId === conversation.id) newConversation();
       }
       await refreshConversations();
     } catch (error) {
@@ -81,7 +87,7 @@ export default function WorkspaceLayout({
         page={page}
         user={user}
         conversations={conversations}
-        currentConversationId={searchParams.get("conversation")}
+        currentConversationId={currentConversationId}
         search={search}
         setSearch={setSearch}
         setDrawer={setDrawer}

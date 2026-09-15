@@ -4,7 +4,7 @@ import WorkspaceLayout from "../layouts/WorkspaceLayout/WorkspaceLayout";
 import FeedbackPage from "../pages/Feedback/FeedbackPage";
 import SettingsPage from "../pages/Settings/SettingsPage";
 import AskPage from "../pages/Ask/AskPage";
-import { ROUTES } from "./paths";
+import { ASK_CONVERSATION_ROUTE, ROUTES } from "./paths";
 
 /** 三个业务页面作为同级子路由，共用传统管理后台布局。 */
 export function createAppRoutes(user: CurrentUser, onLogout: () => void): RouteObject[] {
@@ -15,6 +15,7 @@ export function createAppRoutes(user: CurrentUser, onLogout: () => void): RouteO
       children: [
         { index: true, element: <Navigate to={ROUTES.ask} replace /> },
         { path: ROUTES.ask, element: <AskPage /> },
+        { path: ASK_CONVERSATION_ROUTE, element: <AskPage /> },
         { path: ROUTES.settings, element: <SettingsPage /> },
         {
           path: ROUTES.feedback,

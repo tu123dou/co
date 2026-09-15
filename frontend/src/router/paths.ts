@@ -10,9 +10,28 @@ export const AUTH_ROUTES = {
   register: "/register",
 } as const;
 
+export const ASK_CONVERSATION_ROUTE = `${ROUTES.ask}/:conversationId`;
+
+export function askConversationPath(conversationId: string) {
+  return `${ROUTES.ask}/${encodeURIComponent(conversationId)}`;
+}
+
+export function conversationIdFromPath(pathname: string) {
+  const prefix = `${ROUTES.ask}/`;
+  if (!pathname.startsWith(prefix)) return null;
+  const encodedId = pathname.slice(prefix.length);
+  if (!encodedId || encodedId.includes("/")) return null;
+  try {
+    return decodeURIComponent(encodedId);
+  } catch {
+    return null;
+  }
+}
+
 export type WorkspacePage = keyof typeof ROUTES;
 
 export function pageFromPath(pathname: string): WorkspacePage | null {
+  if (pathname === ROUTES.ask || conversationIdFromPath(pathname)) return "ask";
   const entry = Object.entries(ROUTES).find(([, path]) => path === pathname);
   return (entry?.[0] as WorkspacePage | undefined) ?? null;
 }

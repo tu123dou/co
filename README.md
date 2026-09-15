@@ -2,6 +2,12 @@
 
 React + Python + PostgreSQL 的本地经营分析工作台。经营查询真实调用百炼模型，业务数据为固定种子生成的虚构企业软件与服务台账；助手介绍和业务数据说明由可信目录生成。
 
+## 项目文档
+
+- [前后端与部署技术方案](docs/technical-solution.md)：技术栈、目录结构、主要文件职责、请求链路和部署流程。
+- [架构与实施边界](docs/architecture.md)：业务口径、数据粒度、查询安全和扩展边界。
+- [前端开发规范](docs/frontend-conventions.md) / [后端开发规范](docs/backend-conventions.md)：代码组织和验证要求。
+
 ## 云服务器部署（暂未配置域名）
 
 登录服务器 workbench connect -i i-2vcgdfqug0vm5icpp2nm

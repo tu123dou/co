@@ -1,0 +1,7 @@
+interface:
+  display_name: "部署 AI 问数服务器"
+  short_description: "拉取 feature/co 并安全部署远程前后端服务"
+  default_prompt: "使用 $deploy-ai-wenshu 将最新的 feature/co 部署到远程服务器并完成健康检查。"
+
+policy:
+  allow_implicit_invocation: true
